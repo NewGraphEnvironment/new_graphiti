@@ -15,7 +15,9 @@ the location of the equipment lists that we use in safety/field planning.
 
 ```{r}
 readr::read_csv(
-  glue::glue("https://raw.githubusercontent.com/{params$repo_owner}/{params$repo_name}/main/assets/equipment.csv")
-) |> 
+  url(
+    glue::glue("https://raw.githubusercontent.com/{params$repo_owner}/{params$repo_name}/main/assets/equipment.csv")
+  )
+)|> 
   fpr::fpr_kable(font = 12)
 ```
