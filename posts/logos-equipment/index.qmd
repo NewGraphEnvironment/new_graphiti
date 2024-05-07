@@ -47,7 +47,7 @@ Logos:
     `r glue::glue("https://raw.githubusercontent.com/{params$repo_owner}/{params$repo_name}/main/assets/logos")`
     
     
-There are many so here is a list of their names and locations online:
+There are many - so here is a list of their names and locations online:
 
 ```{r}
 file_names <- fs::dir_ls(
