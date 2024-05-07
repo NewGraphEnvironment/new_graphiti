@@ -27,7 +27,12 @@ Been preferring `snakecase` naming convention for all files and columns and vari
 knitr::include_graphics("thumbnail.jpg")
 ```
 
-Worth noting that `sometimes-rules-need-to-be-broken` sometimes such as when you are naming chunks in `Rmarkdown`. It breaks our `cross-references`.  Luckily as we see here it doesn't matter in `Quarto` (ex. see @fig-snake_vs_camel) vs @fig-all).
+Worth noting that `sometimes-rules-need-to-be-broken` sometimes such as when you are naming chunks in `Rmarkdown`. It breaks our `cross-references`.  
+
+<br>
+
+
+As we see here though - it doesn't matter in `Quarto` (ex. see @fig-snake_vs_camel) vs @fig-all).
 
 ```{r all}
 #| label: fig-all
