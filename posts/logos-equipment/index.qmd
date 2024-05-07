@@ -1,5 +1,5 @@
 ---
-title: "Trying to Put Common Data Somewhere Accessible"
+title: "Logos and Equipment List Somewhere Accessible"
 author: "al"
 date: "2024-05-07"
 date-modified: "2024-05-07"
