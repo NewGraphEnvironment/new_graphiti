@@ -1,0 +1,37 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "new_graphiti",
+    "section": "",
+    "text": "Post With Code\n\n\n\n\n\n\nnews\n\n\ncode\n\n\nanalysis\n\n\n\n\n\n\n\n\n\nMay 7, 2024\n\n\nHarlow Malloc\n\n\n\n\n\n\n\n\n\n\n\n\nsnake_case vs Everything_Else\n\n\n\n\n\n\nnews\n\n\n\n\n\n\n\n\n\nMay 7, 2024\n\n\nal\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "posts/welcome/index.html",
+    "href": "posts/welcome/index.html",
+    "title": "Welcome To My Blog",
+    "section": "",
+    "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
+  },
+  {
+    "objectID": "posts/post-with-code/index.html",
+    "href": "posts/post-with-code/index.html",
+    "title": "Post With Code",
+    "section": "",
+    "text": "This is a post with executable code.\n\n1 + 1\n\n[1] 2"
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this blog"
+  },
+  {
+    "objectID": "posts/snakecase/index.html",
+    "href": "posts/snakecase/index.html",
+    "title": "snake_case vs Everything_Else",
+    "section": "",
+    "text": "Code\nknitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, dpi=60, out.width = \"100%\")\noptions(scipen=999)\noptions(knitr.kable.NA = '--') #'--'\noptions(knitr.kable.NAN = '--')\n\n\nBeen preferring snakecase naming convention for all files and columns and variables for a long time for the following reasons:\n\nIt’s much easier to type. Reaching for the shift button is a pain.\nArguably easier to read. I find it easier to read snake_case than CamelCase.\nCan make it easy to name things in a fashion that allows you to dissect what something is by the way it is named and allows automatic sorting to group similar things together. This is a good read - https://speakerdeck.com/jennybc/how-to-name-files-the-sequel . This pays homage to one of my favorite programmers right now who is Michael Sumner. His tag line on github is “no names have an anonymous function”.\n\n\n\nCode\nknitr::include_graphics(\"thumbnail.jpg\")\n\n\n\n\n\n\n\n\nFigure 1\n\n\n\n\n\nWorth noting that all-rules-need-to-be-broken sometimes such as when you are naming chunks in Rmarkdown and likely Quarto too. It breaks our cross-references (ex see Figure 1) vs Figure 2) when we name our chunks with underscores in them. Fun fact. Good chat.\n\n\nCode\nknitr::include_graphics(\"all.jpeg\")\n\n\n\n\n\n\n\n\nFigure 2"
+  }
+]

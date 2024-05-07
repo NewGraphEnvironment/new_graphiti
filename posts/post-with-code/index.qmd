@@ -1,0 +1,21 @@
+---
+title: "Trying to Put Common Data Somewhere Accessible"
+author: "al"
+date: "2024-05-07"
+categories: [news, code, analysis]
+image: "image.jpg"
+params:
+  repo_owner: "NewGraphEnvironment"
+  repo_name: "new_graphiti"
+---
+
+This is a post showing where we are now keeping the company equipment details as well as the company logo. We need these
+things to be accessible to all team members from all repos so we have put them here since this is a public repo. Here is
+the location of the equipment lists that we use in safety/field planning.
+
+```{r}
+readr::read_csv(
+  glue::glue("https://raw.githubusercontent.com/{params$repo_owner}/{params$repo_name}/main/assets/equipment.csv")
+) |> 
+  fpr::fpr_kable(font = 12)
+```
