@@ -7,7 +7,7 @@ website:
     right:
       - about.qmd
       - icon: github
-        href: https://github.com/NewGraphEnvironment/new_graphiti
+        href: https://github.com/NewGraphEnvironment?tab=repositories
 format:
   html:
     theme: slate
