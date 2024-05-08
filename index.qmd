@@ -1,6 +1,5 @@
 ---
 title: "new graphiti"
-logo: assets/logos/logo_newgraph/BLACK/PNG/nge-icon_black.png
 description: "A playground for blabbing"
 listing:
   contents: posts
