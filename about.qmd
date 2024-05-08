@@ -1,13 +1,13 @@
 ---
-title: "About"
-image: profile.jpg
+title: "wtf"
+image: assets/logos/logo_newgraph/BLACK/PNG/nge-icon_black.png
 about:
   template: jolla
   links:
 
     - icon: linkedin
       text: LinkedIn
-      href: https://linkedin.com
+      href: https://ca.linkedin.com/company/new-graph-environment
     - icon: github
       text: Github
       href: https://github.com/NewGraphEnvironment
