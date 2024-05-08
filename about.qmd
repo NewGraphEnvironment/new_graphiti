@@ -1,6 +1,6 @@
 ---
 title: "wtf"
-image: assets/logos/logo_newgraph/BLACK/PNG/nge-icon_black.png
+image: assets/surf_crash1.jpeg
 about:
   template: jolla
   links:
