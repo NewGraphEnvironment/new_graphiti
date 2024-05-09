@@ -1,6 +1,6 @@
 ---
 title: "new graphiti"
-description: "A playground for blabbing"
+description: "a blab playground"
 listing:
   contents: posts
   sort: "date desc"

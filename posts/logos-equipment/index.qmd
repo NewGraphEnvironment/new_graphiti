@@ -28,12 +28,12 @@ things to be accessible to all team members from all repos so we have put them h
 
 Here is the location of the equipment lists that we use in safety/field planning:
 
-    `r glue::glue("https://raw.githubusercontent.com/{params$repo_owner}/{params$repo_name}/main/assets/equipment.csv")`
+    `r glue::glue("https://raw.githubusercontent.com/{params$repo_owner}/{params$repo_name}/main/assets/data/equipment.csv")`
 
 ```{r}
 readr::read_csv(
   url(
-    glue::glue("https://raw.githubusercontent.com/{params$repo_owner}/{params$repo_name}/main/assets/equipment.csv")
+    glue::glue("https://raw.githubusercontent.com/{params$repo_owner}/{params$repo_name}/main/assets/data/equipment.csv")
   )
 )|> 
   fpr::fpr_kable(font = 12)
@@ -63,4 +63,4 @@ tibble::tibble(path = file_names) |>
 
 ```
 
-testing this
+
