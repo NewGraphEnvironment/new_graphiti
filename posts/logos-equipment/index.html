@@ -203,13 +203,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>This here is a post showing where we are now keeping the company equipment details as well as the company logos. We need these things to be accessible to all team members from all repos so we have put them here since this is a public repo.</p>
 <p>Here is the location of the equipment lists that we use in safety/field planning:</p>
-<pre><code>https://raw.githubusercontent.com/NewGraphEnvironment/new_graphiti/main/assets/equipment.csv</code></pre>
+<pre><code>https://raw.githubusercontent.com/NewGraphEnvironment/new_graphiti/main/assets/data/equipment.csv</code></pre>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>readr<span class="sc">::</span><span class="fu">read_csv</span>(</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">url</span>(</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    glue<span class="sc">::</span><span class="fu">glue</span>(<span class="st">"https://raw.githubusercontent.com/{params$repo_owner}/{params$repo_name}/main/assets/equipment.csv"</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    glue<span class="sc">::</span><span class="fu">glue</span>(<span class="st">"https://raw.githubusercontent.com/{params$repo_owner}/{params$repo_name}/main/assets/data/equipment.csv"</span>)</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>)<span class="sc">|&gt;</span> </span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  fpr<span class="sc">::</span><span class="fu">fpr_kable</span>(<span class="at">font =</span> <span class="dv">12</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -1782,7 +1782,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>testing this</p>
 
 
 
