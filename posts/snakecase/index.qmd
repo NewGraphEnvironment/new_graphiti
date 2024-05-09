@@ -2,10 +2,11 @@
 title: "snake_case vs Everything_Else"
 author: "al"
 date: "2024-05-07"
+date_modified: "`r format(Sys.time(), '%Y-%m-%d')`"
 format: 
   html:
     code-fold: true
-categories: [news]
+categories: [names, news]
 ---
 
 ```{r setup, echo=TRUE, include = TRUE}
@@ -20,7 +21,7 @@ Been preferring `snakecase` naming convention for all files and columns and vari
 
 1.  It's much easier to type. Reaching for the shift button is a pain.
 2.  Arguably easier to read. I find it easier to read `snake_case` than `CamelCase`.
-3.  Can make it easy to `name` things in a fashion that allows you to dissect what something is by the way it is named and allows automatic sorting to group similar things together. This is a good read - https://speakerdeck.com/jennybc/how-to-name-files-the-sequel . This pays homage to one of my favorite programmers right now who is [Michael Sumner](https://github.com/mdsumner). His tag line on `github` is "no names have an anonymous function".
+3.  Can make it easy to `name` things in a fashion that allows you to `r unlist(stringr::str_split("dissect_what_something_is", pattern = "_"))` by the way it is named and allows automatic sorting to group similar things together. This presentation by [Jenny Bryan](https://github.com/jennybc) is a good read - [https://speakerdeck.com/jennybc/how-to-name-files-the-sequel](https://speakerdeck.com/jennybc/how-to-name-files-the-sequel). 
 
 ```{r snake_vs_camel}
 #| label: fig-snake_vs_camel
@@ -39,3 +40,6 @@ As we see here though - it doesn't matter in `Quarto` (ex. see @fig-snake_vs_cam
 knitr::include_graphics("all.jpeg")
 ```
 
+>"no names have an anonymous function".
+>
+>&nbsp;&nbsp;&nbsp;&nbsp;-[Michael Sumner](https://github.com/mdsumner)

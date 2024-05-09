@@ -2,7 +2,7 @@
 title: "Logos and Equipment List Somewhere Accessible"
 author: "al"
 date: "2024-05-07"
-date-modified: "2024-05-07"
+date-modified: "`r format(Sys.time(), '%Y-%m-%d')`"
 categories: [news, assets]
 image: "image.jpg"
 params:
