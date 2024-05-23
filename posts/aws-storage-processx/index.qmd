@@ -24,21 +24,23 @@ options(knitr.kable.NAN = '--')
 Inspired by https://blog.djnavarro.net/posts/2022-03-17_using-aws-s3-in-r/ by [Danielle Navarro](https://github.com/djnavarro).
 
 
+Interestingly none of this works when published because it will be built there with github actions. Anyway,
+this renders locally and that is good enough for now.
+
+
+
 Quick post to document where I got to with syncing files to aws with R. Didn't love the `aws.s3::sync` function because
 from what I could tell I could not tell it to delete files if they were not present locally or in a bucket (I could be wrong). 
 So... figured why not just call the `aws` command line tool from R. `processx` is an insane package that might be the mother of all
 packages. It allows you to run command line tools from R wiwht flexibility for some things like setting the  directory 
 where the command is called in the function (big deal as far as I can tell). 
 
-<br>
 
 We need to set up our `aws` account online. The blog above covers that I believe (I struggled through it a long time ago). I should use a `~/.aws/credentials` file but don't yet.  I have my credentials in my `~/.Renviron` file as well as in my `~/.bash_profile`. They are:
 
     AWS_ACCESS_KEY_ID='my_key'
     AWS_DEFAULT_REGION='my_region'
     AWS_SECRET_ACCESS_KEY='my_secret_key'
-
-
 
 Let's us `aws.s3` to make a bucket and see what we are doing. Make a bucket called `test-02240523-01`.
 
@@ -101,13 +103,13 @@ Then we specify our command and arguments. To achieve the desired behavior of in
 ```{r}
 command <- "aws"
 args <- c('s3', 'sync', '.', 's3://test-20240523-01', '--delete', '--exclude', '*', '--include', 'posts/*')
-working_directory = '.' #we could just remove from funciton to get the current wd but its nice to have so we leave
+working_directory = here::here() #we could just remove from funciton to get the current wd but its nice to have so we leave
 ```
 
 Now lets put a tester file in our directory and sync it to our bucket. We will remove it later to test if it is removed on sync.
 
 ```{r}
-file.create('posts/test.txt')
+file.create(here::here('posts/test.txt'))
 ```
 
 
@@ -127,7 +129,7 @@ t <- aws.s3::get_bucket_df('test-20240523-01')
 Now we will remove `test.txt`
 
 ```{r}
-file.remove('posts/test.txt')
+file.remove(here::here('posts/test.txt'))
 ```
 
 Now we sync again 
@@ -147,17 +149,10 @@ Compare the two dataframes
 waldo::compare(t$Key, t2$Key)
 ```
 
-Success!! Lets delete the bucket
+Success!! Lets try to delete the bucket with `aws.s3::delete_bucket`
 
 ```{r}
-  result <- tryCatch({
-    aws.s3::delete_bucket("test-20240523-01")
-  }, error = function(e) {
-    # Handle errors: e.g., print a custom error message
-    cat("An error occurred: ", e$message, "\n")
-    NULL  # Return NULL or another appropriate value
-  })
-
+aws.s3::delete_bucket("test-20240523-01")
 ```
 
 Won't let me do it... Think it is because we have used the command line tool to manage it... not sure.  Lets use the cli
