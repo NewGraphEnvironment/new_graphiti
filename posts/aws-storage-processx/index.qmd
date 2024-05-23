@@ -146,7 +146,7 @@ waldo::compare(t$Key, t2$Key)
 
 Success!! Lets try to delete the bucket with `aws.s3::delete_bucket`
 
-```{r}
+```{r eval = FALSE}
 aws.s3::delete_bucket("test-20240523-01")
 ```
 
