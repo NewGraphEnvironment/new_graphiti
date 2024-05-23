@@ -24,11 +24,6 @@ options(knitr.kable.NAN = '--')
 Inspired by https://blog.djnavarro.net/posts/2022-03-17_using-aws-s3-in-r/ by [Danielle Navarro](https://github.com/djnavarro).
 
 
-Interestingly none of this works when published because it will be built there with github actions. Anyway,
-this renders locally and that is good enough for now.
-
-
-
 Quick post to document where I got to with syncing files to aws with R. Didn't love the `aws.s3::sync` function because
 from what I could tell I could not tell it to delete files if they were not present locally or in a bucket (I could be wrong). 
 So... figured why not just call the `aws` command line tool from R. `processx` is an insane package that might be the mother of all
