@@ -24,7 +24,7 @@ options(knitr.kable.NAN = '--')
 Inspired by https://blog.djnavarro.net/posts/2022-03-17_using-aws-s3-in-r/ by [Danielle Navarro](https://github.com/djnavarro).
 
 Maybe unsurprisingly (now that I think about) it - this post will not build with github actions since it is using my machine.  Perhaps if we install the `aws` command line tool on the github actions runner and give it access to my account somehow it will work. That could be another post (or book perhaps) and 
-may require [GitHub Enterprise Server](https://docs.github.com/en/enterprise-server@3.11/admin/github-actions/enabling-github-actions-for-github-enterprise-server/enabling-github-actions-with-amazon-s3-storage).
+may require [GitHub Enterprise Server](https://docs.github.com/en/enterprise-server@3.11/admin/github-actions/enabling-github-actions-for-github-enterprise-server/enabling-github-actions-with-amazon-s3-storage).  Actually a bit confused as it seems to build somehow when I turn on the `pages` to build from the `gh-pages` branch.  Hmmm.
 
 "Quick" post to document where I got to with syncing files to aws with R. Didn't love the `aws.s3::sync` function because
 from what I could tell I could not tell it to delete files if they were not present locally or in a bucket (I could be wrong). So... figured why not just call the `aws` command line tool from R. `processx` is an insane package that might be the mother of all packages. It allows you to run command line tools from R wiwht flexibility for some things like setting the  directory 
