@@ -200,8 +200,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </details>
 </div>
 <p>Inspired by https://blog.djnavarro.net/posts/2022-03-17_using-aws-s3-in-r/ by <a href="https://github.com/djnavarro">Danielle Navarro</a>.</p>
+<p>Interestingly none of this works when published because it will be built there with github actions. Anyway, this renders locally and that is good enough for now.</p>
 <p>Quick post to document where I got to with syncing files to aws with R. Didn’t love the <code>aws.s3::sync</code> function because from what I could tell I could not tell it to delete files if they were not present locally or in a bucket (I could be wrong). So… figured why not just call the <code>aws</code> command line tool from R. <code>processx</code> is an insane package that might be the mother of all packages. It allows you to run command line tools from R wiwht flexibility for some things like setting the directory where the command is called in the function (big deal as far as I can tell).</p>
-<p><br></p>
 <p>We need to set up our <code>aws</code> account online. The blog above covers that I believe (I struggled through it a long time ago). I should use a <code>~/.aws/credentials</code> file but don’t yet. I have my credentials in my <code>~/.Renviron</code> file as well as in my <code>~/.bash_profile</code>. They are:</p>
 <pre><code>AWS_ACCESS_KEY_ID='my_key'
 AWS_DEFAULT_REGION='my_region'
@@ -271,18 +271,18 @@ AWS_SECRET_ACCESS_KEY='my_secret_key'</code></pre>
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>command <span class="ot">&lt;-</span> <span class="st">"aws"</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>args <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'s3'</span>, <span class="st">'sync'</span>, <span class="st">'.'</span>, <span class="st">'s3://test-20240523-01'</span>, <span class="st">'--delete'</span>, <span class="st">'--exclude'</span>, <span class="st">'*'</span>, <span class="st">'--include'</span>, <span class="st">'assets/*'</span>)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>working_directory <span class="ot">=</span> <span class="st">'.'</span> <span class="co">#we could just remove from funciton to get the current wd but its nice to have so we leave</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>args <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'s3'</span>, <span class="st">'sync'</span>, <span class="st">'.'</span>, <span class="st">'s3://test-20240523-01'</span>, <span class="st">'--delete'</span>, <span class="st">'--exclude'</span>, <span class="st">'*'</span>, <span class="st">'--include'</span>, <span class="st">'posts/*'</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>working_directory <span class="ot">=</span> here<span class="sc">::</span><span class="fu">here</span>() <span class="co">#we could just remove from funciton to get the current wd but its nice to have so we leave</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>Now lets put a tester file in our directory and sync it to our bucket. We will remove it later to test if it is removed on sync.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">file.create</span>(<span class="st">'assets/test.txt'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">file.create</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">'posts/test.txt'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] FALSE</code></pre>
+<pre><code>[1] TRUE</code></pre>
 </div>
 </div>
 <p>Run our little function</p>
@@ -292,9 +292,66 @@ AWS_SECRET_ACCESS_KEY='my_secret_key'</code></pre>
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sys_call</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>Exit status: 0 
+<pre><code>Completed 237 Bytes/492.0 KiB (2.9 KiB/s) with 10 file(s) remaining
+upload: posts/_metadata.yml to s3://test-20240523-01/posts/_metadata.yml
+Completed 237 Bytes/492.0 KiB (2.9 KiB/s) with 9 file(s) remaining
+upload: posts/test.txt to s3://test-20240523-01/posts/test.txt    
+Completed 237 Bytes/492.0 KiB (2.9 KiB/s) with 8 file(s) remaining
+Completed 2.0 KiB/492.0 KiB (11.3 KiB/s) with 8 file(s) remaining 
+upload: posts/logos-equipment/index.qmd to s3://test-20240523-01/posts/logos-equipment/index.qmd
+Completed 2.0 KiB/492.0 KiB (11.3 KiB/s) with 7 file(s) remaining
+Completed 3.6 KiB/492.0 KiB (20.5 KiB/s) with 7 file(s) remaining
+upload: posts/snakecase/index.qmd to s3://test-20240523-01/posts/snakecase/index.qmd
+Completed 3.6 KiB/492.0 KiB (20.5 KiB/s) with 6 file(s) remaining
+Completed 7.5 KiB/492.0 KiB (40.8 KiB/s) with 6 file(s) remaining
+upload: posts/aws-storage-processx/image.jpg to s3://test-20240523-01/posts/aws-storage-processx/image.jpg
+Completed 7.5 KiB/492.0 KiB (40.8 KiB/s) with 5 file(s) remaining
+Completed 12.5 KiB/492.0 KiB (65.5 KiB/s) with 5 file(s) remaining
+upload: posts/aws-storage-processx/index.qmd to s3://test-20240523-01/posts/aws-storage-processx/index.qmd
+Completed 12.5 KiB/492.0 KiB (65.5 KiB/s) with 4 file(s) remaining
+Completed 17.5 KiB/492.0 KiB (91.7 KiB/s) with 4 file(s) remaining
+upload: posts/aws-storage-processx/index.rmarkdown to s3://test-20240523-01/posts/aws-storage-processx/index.rmarkdown
+Completed 17.5 KiB/492.0 KiB (91.7 KiB/s) with 3 file(s) remaining
+Completed 22.6 KiB/492.0 KiB (112.5 KiB/s) with 3 file(s) remaining
+upload: posts/snakecase/thumbnail.jpg to s3://test-20240523-01/posts/snakecase/thumbnail.jpg
+Completed 22.6 KiB/492.0 KiB (112.5 KiB/s) with 2 file(s) remaining
+Completed 63.3 KiB/492.0 KiB (193.1 KiB/s) with 2 file(s) remaining
+upload: posts/logos-equipment/image.jpg to s3://test-20240523-01/posts/logos-equipment/image.jpg
+Completed 63.3 KiB/492.0 KiB (193.1 KiB/s) with 1 file(s) remaining
+Completed 319.3 KiB/492.0 KiB (826.2 KiB/s) with 1 file(s) remaining
+Completed 492.0 KiB/492.0 KiB (641.5 KiB/s) with 1 file(s) remaining
+upload: posts/snakecase/all.jpeg to s3://test-20240523-01/posts/snakecase/all.jpeg
+Exit status: 0 
 Output:
- </code></pre>
+ Completed 237 Bytes/492.0 KiB (2.9 KiB/s) with 10 file(s) remaining
+upload: posts/_metadata.yml to s3://test-20240523-01/posts/_metadata.yml
+Completed 237 Bytes/492.0 KiB (2.9 KiB/s) with 9 file(s) remaining
+upload: posts/test.txt to s3://test-20240523-01/posts/test.txt    
+Completed 237 Bytes/492.0 KiB (2.9 KiB/s) with 8 file(s) remaining
+Completed 2.0 KiB/492.0 KiB (11.3 KiB/s) with 8 file(s) remaining 
+upload: posts/logos-equipment/index.qmd to s3://test-20240523-01/posts/logos-equipment/index.qmd
+Completed 2.0 KiB/492.0 KiB (11.3 KiB/s) with 7 file(s) remaining
+Completed 3.6 KiB/492.0 KiB (20.5 KiB/s) with 7 file(s) remaining
+upload: posts/snakecase/index.qmd to s3://test-20240523-01/posts/snakecase/index.qmd
+Completed 3.6 KiB/492.0 KiB (20.5 KiB/s) with 6 file(s) remaining
+Completed 7.5 KiB/492.0 KiB (40.8 KiB/s) with 6 file(s) remaining
+upload: posts/aws-storage-processx/image.jpg to s3://test-20240523-01/posts/aws-storage-processx/image.jpg
+Completed 7.5 KiB/492.0 KiB (40.8 KiB/s) with 5 file(s) remaining
+Completed 12.5 KiB/492.0 KiB (65.5 KiB/s) with 5 file(s) remaining
+upload: posts/aws-storage-processx/index.qmd to s3://test-20240523-01/posts/aws-storage-processx/index.qmd
+Completed 12.5 KiB/492.0 KiB (65.5 KiB/s) with 4 file(s) remaining
+Completed 17.5 KiB/492.0 KiB (91.7 KiB/s) with 4 file(s) remaining
+upload: posts/aws-storage-processx/index.rmarkdown to s3://test-20240523-01/posts/aws-storage-processx/index.rmarkdown
+Completed 17.5 KiB/492.0 KiB (91.7 KiB/s) with 3 file(s) remaining
+Completed 22.6 KiB/492.0 KiB (112.5 KiB/s) with 3 file(s) remaining
+upload: posts/snakecase/thumbnail.jpg to s3://test-20240523-01/posts/snakecase/thumbnail.jpg
+Completed 22.6 KiB/492.0 KiB (112.5 KiB/s) with 2 file(s) remaining
+Completed 63.3 KiB/492.0 KiB (193.1 KiB/s) with 2 file(s) remaining
+upload: posts/logos-equipment/image.jpg to s3://test-20240523-01/posts/logos-equipment/image.jpg
+Completed 63.3 KiB/492.0 KiB (193.1 KiB/s) with 1 file(s) remaining
+Completed 319.3 KiB/492.0 KiB (826.2 KiB/s) with 1 file(s) remaining
+Completed 492.0 KiB/492.0 KiB (641.5 KiB/s) with 1 file(s) remaining
+upload: posts/snakecase/all.jpeg to s3://test-20240523-01/posts/snakecase/all.jpeg</code></pre>
 </div>
 </div>
 <p>Then we can list our bucket contents and capture them</p>
@@ -308,10 +365,10 @@ Output:
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">file.remove</span>(<span class="st">'assets/test.txt'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">file.remove</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">'posts/test.txt'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] FALSE</code></pre>
+<pre><code>[1] TRUE</code></pre>
 </div>
 </div>
 <p>Now we sync again</p>
@@ -321,9 +378,10 @@ Output:
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sys_call</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>Exit status: 0 
+<pre><code>delete: s3://test-20240523-01/posts/test.txt
+Exit status: 0 
 Output:
- </code></pre>
+ delete: s3://test-20240523-01/posts/test.txt</code></pre>
 </div>
 </div>
 <p>List our bucket contents and capture them again</p>
@@ -337,38 +395,94 @@ Output:
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>waldo<span class="sc">::</span><span class="fu">compare</span>(t<span class="sc">$</span>bucket, t2<span class="sc">$</span>bucket)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>waldo<span class="sc">::</span><span class="fu">compare</span>(t<span class="sc">$</span>Key, t2<span class="sc">$</span>Key)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>✔ No differences</code></pre>
+<pre><code>     old                             | new                                
+ [7] "posts/snakecase/all.jpeg"      | "posts/snakecase/all.jpeg"      [7]
+ [8] "posts/snakecase/index.qmd"     | "posts/snakecase/index.qmd"     [8]
+ [9] "posts/snakecase/thumbnail.jpg" | "posts/snakecase/thumbnail.jpg" [9]
+[10] "posts/test.txt"                -                                    </code></pre>
 </div>
 </div>
 <p>Success!! Lets delete the bucket</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>({</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    aws.s3<span class="sc">::</span><span class="fu">delete_bucket</span>(<span class="st">"test-20240523-01"</span>)</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  }, <span class="at">error =</span> <span class="cf">function</span>(e) {</span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Handle errors: e.g., print a custom error message</span></span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"An error occurred: "</span>, e<span class="sc">$</span>message, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="cn">NULL</span>  <span class="co"># Return NULL or another appropriate value</span></span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  })</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># run_with_error_handling &lt;- function(call_expr) {</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   result &lt;- tryCatch({</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="co">#     eval(call_expr)</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co">#   }, error = function(e) {</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="co">#     # Handle errors: e.g., print a custom error message</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="co">#     cat("An error occurred: ", e$message, "\n")</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co">#     NULL  # Return NULL or another appropriate value</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="co">#   })</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="co">#   </span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="co">#   if (is.null(result)) {</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="co">#     cat("The operation failed.\n")</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="co">#   } else {</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a><span class="co">#     if (is.logical(result) &amp;&amp; result) {</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a><span class="co">#       cat("The operation succeeded.\n")</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a><span class="co">#     } else {</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a><span class="co">#       cat("The operation completed but did not return a success indicator.\n")</span></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a><span class="co">#       print(result)  # Print the result for further inspection</span></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a><span class="co">#     }</span></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a><span class="co">#   }</span></span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a><span class="co"># }</span></span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a><span class="co"># # Example usage with aws.s3::delete_bucket</span></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a><span class="co"># run_with_error_handling(quote(aws.s3::delete_bucket("test-20240523-01")))</span></span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Example usage with another call</span></span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a><span class="co"># run_with_error_handling(quote(another_function_call(args)))</span></span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a>aws.s3<span class="sc">::</span><span class="fu">delete_bucket</span>(<span class="st">"test-20240523-01"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] FALSE
+attr(,"x-amz-request-id")
+[1] "54VPM699PYPQ4B12"
+attr(,"x-amz-id-2")
+[1] "0P3w/yPlADBu1yNMKc3xb8VE41ryyCBoYbgJLWp9f9BXBQv03kLLcDTg6x/0Hx4BWXcDbtbVCxQ="
+attr(,"content-type")
+[1] "application/xml"
+attr(,"transfer-encoding")
+[1] "chunked"
+attr(,"date")
+[1] "Thu, 23 May 2024 22:45:06 GMT"
+attr(,"server")
+[1] "AmazonS3"</code></pre>
+</div>
 </div>
 <p>Won’t let me do it… Think it is because we have used the command line tool to manage it… not sure. Lets use the cli</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>args <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'s3'</span>, <span class="st">'rb'</span>, <span class="st">'s3://test-20240523-01'</span>, <span class="st">'--force'</span>)</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sys_call</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>args <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'s3'</span>, <span class="st">'rb'</span>, <span class="st">'s3://test-20240523-01'</span>, <span class="st">'--force'</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sys_call</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>fatal error: An error occurred (NoSuchBucket) when calling the ListObjectsV2 operation: The specified bucket does not exist
-
-remove_bucket failed: Unable to delete all objects in the bucket, bucket will not be deleted.
-An error occurred:  System command 'aws' failed 
-Failed to execute the command properly.</code></pre>
+<pre><code>delete: s3://test-20240523-01/posts/aws-storage-processx/index.rmarkdown
+delete: s3://test-20240523-01/posts/aws-storage-processx/index.qmd
+delete: s3://test-20240523-01/posts/logos-equipment/index.qmd
+delete: s3://test-20240523-01/posts/logos-equipment/image.jpg
+delete: s3://test-20240523-01/posts/snakecase/thumbnail.jpg
+delete: s3://test-20240523-01/posts/snakecase/index.qmd
+delete: s3://test-20240523-01/posts/aws-storage-processx/image.jpg
+delete: s3://test-20240523-01/posts/_metadata.yml
+delete: s3://test-20240523-01/posts/snakecase/all.jpeg
+remove_bucket: test-20240523-01
+Exit status: 0 
+Output:
+ delete: s3://test-20240523-01/posts/aws-storage-processx/index.rmarkdown
+delete: s3://test-20240523-01/posts/aws-storage-processx/index.qmd
+delete: s3://test-20240523-01/posts/logos-equipment/index.qmd
+delete: s3://test-20240523-01/posts/logos-equipment/image.jpg
+delete: s3://test-20240523-01/posts/snakecase/thumbnail.jpg
+delete: s3://test-20240523-01/posts/snakecase/index.qmd
+delete: s3://test-20240523-01/posts/aws-storage-processx/image.jpg
+delete: s3://test-20240523-01/posts/_metadata.yml
+delete: s3://test-20240523-01/posts/snakecase/all.jpeg
+remove_bucket: test-20240523-01</code></pre>
 </div>
 </div>
 
