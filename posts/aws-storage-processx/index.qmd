@@ -1,0 +1,169 @@
+---
+title: "Syncing files to aws with R"
+author: "al"
+date: "2024-05-23"
+date-modified: "`r format(Sys.time(), '%Y-%m-%d')`"
+categories: [news, assets]
+image: "image.jpg"
+params:
+  repo_owner: "NewGraphEnvironment"
+  repo_name: "new_graphiti"
+format: 
+  html:
+    code-fold: true
+---
+
+
+```{r setup, echo=TRUE, include = TRUE}
+knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, dpi=60, out.width = "100%")
+options(scipen=999)
+options(knitr.kable.NA = '--') #'--'
+options(knitr.kable.NAN = '--')
+```
+
+Inspired by https://blog.djnavarro.net/posts/2022-03-17_using-aws-s3-in-r/ by [Danielle Navarro](https://github.com/djnavarro).
+
+
+Quick post to document where I got to with syncing files to aws with R. Didn't love the `aws.s3::sync` function because
+from what I could tell I could not tell it to delete files if they were not present locally or in a bucket (I could be wrong). 
+So... figured why not just call the `aws` command line tool from R. `processx` is an insane package that might be the mother of all
+packages. It allows you to run command line tools from R wiwht flexibility for some things like setting the  directory 
+where the command is called in the function (big deal as far as I can tell). 
+
+<br>
+
+We need to set up our `aws` account online. The blog above covers that I believe (I struggled through it a long time ago). I should use a `~/.aws/credentials` file but don't yet.  I have my credentials in my `~/.Renviron` file as well as in my `~/.bash_profile`. They are:
+
+    AWS_ACCESS_KEY_ID='my_key'
+    AWS_DEFAULT_REGION='my_region'
+    AWS_SECRET_ACCESS_KEY='my_secret_key'
+
+
+
+Let's us `aws.s3` to make a bucket and see what we are doing. Make a bucket called `test-02240523-01`.
+
+```{r}
+library(aws.s3)
+library(processx)
+
+
+```
+
+See our buckets
+
+```{r}
+aws.s3::bucketlist()
+```
+
+Make a new bucket
+
+```{r}
+aws.s3::put_bucket("test-20240523-01")
+```
+
+
+We build a little wrapper function to help us debug issues.
+
+
+```{r}
+sys_call <- function(){
+  result <- tryCatch({
+    processx::run(
+      command,
+      args = args,
+      echo = TRUE,            # Print the command output live
+      wd = working_directory, # Set the working directory
+      spinner = TRUE,         # Show a spinner
+      timeout = 60            # Timeout after 60 seconds
+    )
+  }, error = function(e) {
+    # Handle errors: e.g., print a custom error message
+    cat("An error occurred: ", e$message, "\n")
+    NULL  # Return NULL or another appropriate value
+  })
+  
+  # Check if the command was successful
+  if (!is.null(result)) {
+    cat("Exit status:", result$status, "\n")
+    cat("Output:\n", result$stdout)
+  } else {
+    cat("Failed to execute the command properly.\n")
+  }
+}
+
+```
+
+<br>
+
+Then we specify our command and arguments. To achieve the desired behavior of including only files in the `assets/*` directory, you need to combine the --exclude and --include flags appropriately.:
+
+
+```{r}
+command <- "aws"
+args <- c('s3', 'sync', '.', 's3://test-20240523-01', '--delete', '--exclude', '*', '--include', 'posts/*')
+working_directory = '.' #we could just remove from funciton to get the current wd but its nice to have so we leave
+```
+
+Now lets put a tester file in our directory and sync it to our bucket. We will remove it later to test if it is removed on sync.
+
+```{r}
+file.create('posts/test.txt')
+```
+
+
+
+Run our little function
+
+```{r}
+sys_call()
+```
+
+Then we can list our bucket contents and capture them
+
+```{r}
+t <- aws.s3::get_bucket_df('test-20240523-01') 
+```
+
+Now we will remove `test.txt`
+
+```{r}
+file.remove('posts/test.txt')
+```
+
+Now we sync again 
+
+```{r}
+sys_call()
+```
+
+List our bucket contents and capture them again
+
+```{r}
+t2 <- aws.s3::get_bucket_df('test-20240523-01') 
+```
+Compare the two dataframes
+
+```{r}
+waldo::compare(t$Key, t2$Key)
+```
+
+Success!! Lets delete the bucket
+
+```{r}
+  result <- tryCatch({
+    aws.s3::delete_bucket("test-20240523-01")
+  }, error = function(e) {
+    # Handle errors: e.g., print a custom error message
+    cat("An error occurred: ", e$message, "\n")
+    NULL  # Return NULL or another appropriate value
+  })
+
+```
+
+Won't let me do it... Think it is because we have used the command line tool to manage it... not sure.  Lets use the cli
+
+```{r}
+args <- c('s3', 'rb', 's3://test-20240523-01', '--force')
+sys_call()
+```
+
