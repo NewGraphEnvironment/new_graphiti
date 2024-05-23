@@ -200,7 +200,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </details>
 </div>
 <p>Inspired by https://blog.djnavarro.net/posts/2022-03-17_using-aws-s3-in-r/ by <a href="https://github.com/djnavarro">Danielle Navarro</a>.</p>
-<p>Interestingly none of this works when published because it will be built there with github actions. Anyway, this renders locally and that is good enough for now.</p>
+<p>This post will not build with github actions since it is using my machine. Perhaps if we install the <code>aws</code> command line tool on the runner somehow it will work. That could be another post (or book perhaps).</p>
 <p>Quick post to document where I got to with syncing files to aws with R. Didn’t love the <code>aws.s3::sync</code> function because from what I could tell I could not tell it to delete files if they were not present locally or in a bucket (I could be wrong). So… figured why not just call the <code>aws</code> command line tool from R. <code>processx</code> is an insane package that might be the mother of all packages. It allows you to run command line tools from R wiwht flexibility for some things like setting the directory where the command is called in the function (big deal as far as I can tell).</p>
 <p>We need to set up our <code>aws</code> account online. The blog above covers that I believe (I struggled through it a long time ago). I should use a <code>~/.aws/credentials</code> file but don’t yet. I have my credentials in my <code>~/.Renviron</code> file as well as in my <code>~/.bash_profile</code>. They are:</p>
 <pre><code>AWS_ACCESS_KEY_ID='my_key'
@@ -292,65 +292,65 @@ AWS_SECRET_ACCESS_KEY='my_secret_key'</code></pre>
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sys_call</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>Completed 237 Bytes/492.0 KiB (2.9 KiB/s) with 10 file(s) remaining
+<pre><code>Completed 237 Bytes/490.5 KiB (2.7 KiB/s) with 10 file(s) remaining
 upload: posts/_metadata.yml to s3://test-20240523-01/posts/_metadata.yml
-Completed 237 Bytes/492.0 KiB (2.9 KiB/s) with 9 file(s) remaining
+Completed 237 Bytes/490.5 KiB (2.7 KiB/s) with 9 file(s) remaining
 upload: posts/test.txt to s3://test-20240523-01/posts/test.txt    
-Completed 237 Bytes/492.0 KiB (2.9 KiB/s) with 8 file(s) remaining
-Completed 2.0 KiB/492.0 KiB (11.3 KiB/s) with 8 file(s) remaining 
-upload: posts/logos-equipment/index.qmd to s3://test-20240523-01/posts/logos-equipment/index.qmd
-Completed 2.0 KiB/492.0 KiB (11.3 KiB/s) with 7 file(s) remaining
-Completed 3.6 KiB/492.0 KiB (20.5 KiB/s) with 7 file(s) remaining
+Completed 237 Bytes/490.5 KiB (2.7 KiB/s) with 8 file(s) remaining
+Completed 1.9 KiB/490.5 KiB (10.5 KiB/s) with 8 file(s) remaining 
 upload: posts/snakecase/index.qmd to s3://test-20240523-01/posts/snakecase/index.qmd
-Completed 3.6 KiB/492.0 KiB (20.5 KiB/s) with 6 file(s) remaining
-Completed 7.5 KiB/492.0 KiB (40.8 KiB/s) with 6 file(s) remaining
-upload: posts/aws-storage-processx/image.jpg to s3://test-20240523-01/posts/aws-storage-processx/image.jpg
-Completed 7.5 KiB/492.0 KiB (40.8 KiB/s) with 5 file(s) remaining
-Completed 12.5 KiB/492.0 KiB (65.5 KiB/s) with 5 file(s) remaining
-upload: posts/aws-storage-processx/index.qmd to s3://test-20240523-01/posts/aws-storage-processx/index.qmd
-Completed 12.5 KiB/492.0 KiB (65.5 KiB/s) with 4 file(s) remaining
-Completed 17.5 KiB/492.0 KiB (91.7 KiB/s) with 4 file(s) remaining
+Completed 1.9 KiB/490.5 KiB (10.5 KiB/s) with 7 file(s) remaining
+Completed 3.6 KiB/490.5 KiB (19.3 KiB/s) with 7 file(s) remaining
+upload: posts/logos-equipment/index.qmd to s3://test-20240523-01/posts/logos-equipment/index.qmd
+Completed 3.6 KiB/490.5 KiB (19.3 KiB/s) with 6 file(s) remaining
+Completed 7.9 KiB/490.5 KiB (40.0 KiB/s) with 6 file(s) remaining
 upload: posts/aws-storage-processx/index.rmarkdown to s3://test-20240523-01/posts/aws-storage-processx/index.rmarkdown
-Completed 17.5 KiB/492.0 KiB (91.7 KiB/s) with 3 file(s) remaining
-Completed 22.6 KiB/492.0 KiB (112.5 KiB/s) with 3 file(s) remaining
+Completed 7.9 KiB/490.5 KiB (40.0 KiB/s) with 5 file(s) remaining
+Completed 12.1 KiB/490.5 KiB (61.5 KiB/s) with 5 file(s) remaining
+upload: posts/aws-storage-processx/index.qmd to s3://test-20240523-01/posts/aws-storage-processx/index.qmd
+Completed 12.1 KiB/490.5 KiB (61.5 KiB/s) with 4 file(s) remaining
+Completed 16.0 KiB/490.5 KiB (77.6 KiB/s) with 4 file(s) remaining
+upload: posts/aws-storage-processx/image.jpg to s3://test-20240523-01/posts/aws-storage-processx/image.jpg
+Completed 16.0 KiB/490.5 KiB (77.6 KiB/s) with 3 file(s) remaining
+Completed 21.0 KiB/490.5 KiB (101.6 KiB/s) with 3 file(s) remaining
 upload: posts/snakecase/thumbnail.jpg to s3://test-20240523-01/posts/snakecase/thumbnail.jpg
-Completed 22.6 KiB/492.0 KiB (112.5 KiB/s) with 2 file(s) remaining
-Completed 63.3 KiB/492.0 KiB (193.1 KiB/s) with 2 file(s) remaining
+Completed 21.0 KiB/490.5 KiB (101.6 KiB/s) with 2 file(s) remaining
+Completed 61.8 KiB/490.5 KiB (192.5 KiB/s) with 2 file(s) remaining
 upload: posts/logos-equipment/image.jpg to s3://test-20240523-01/posts/logos-equipment/image.jpg
-Completed 63.3 KiB/492.0 KiB (193.1 KiB/s) with 1 file(s) remaining
-Completed 319.3 KiB/492.0 KiB (826.2 KiB/s) with 1 file(s) remaining
-Completed 492.0 KiB/492.0 KiB (641.5 KiB/s) with 1 file(s) remaining
+Completed 61.8 KiB/490.5 KiB (192.5 KiB/s) with 1 file(s) remaining
+Completed 317.8 KiB/490.5 KiB (716.7 KiB/s) with 1 file(s) remaining
+Completed 490.5 KiB/490.5 KiB (579.1 KiB/s) with 1 file(s) remaining
 upload: posts/snakecase/all.jpeg to s3://test-20240523-01/posts/snakecase/all.jpeg
 Exit status: 0 
 Output:
- Completed 237 Bytes/492.0 KiB (2.9 KiB/s) with 10 file(s) remaining
+ Completed 237 Bytes/490.5 KiB (2.7 KiB/s) with 10 file(s) remaining
 upload: posts/_metadata.yml to s3://test-20240523-01/posts/_metadata.yml
-Completed 237 Bytes/492.0 KiB (2.9 KiB/s) with 9 file(s) remaining
+Completed 237 Bytes/490.5 KiB (2.7 KiB/s) with 9 file(s) remaining
 upload: posts/test.txt to s3://test-20240523-01/posts/test.txt    
-Completed 237 Bytes/492.0 KiB (2.9 KiB/s) with 8 file(s) remaining
-Completed 2.0 KiB/492.0 KiB (11.3 KiB/s) with 8 file(s) remaining 
-upload: posts/logos-equipment/index.qmd to s3://test-20240523-01/posts/logos-equipment/index.qmd
-Completed 2.0 KiB/492.0 KiB (11.3 KiB/s) with 7 file(s) remaining
-Completed 3.6 KiB/492.0 KiB (20.5 KiB/s) with 7 file(s) remaining
+Completed 237 Bytes/490.5 KiB (2.7 KiB/s) with 8 file(s) remaining
+Completed 1.9 KiB/490.5 KiB (10.5 KiB/s) with 8 file(s) remaining 
 upload: posts/snakecase/index.qmd to s3://test-20240523-01/posts/snakecase/index.qmd
-Completed 3.6 KiB/492.0 KiB (20.5 KiB/s) with 6 file(s) remaining
-Completed 7.5 KiB/492.0 KiB (40.8 KiB/s) with 6 file(s) remaining
-upload: posts/aws-storage-processx/image.jpg to s3://test-20240523-01/posts/aws-storage-processx/image.jpg
-Completed 7.5 KiB/492.0 KiB (40.8 KiB/s) with 5 file(s) remaining
-Completed 12.5 KiB/492.0 KiB (65.5 KiB/s) with 5 file(s) remaining
-upload: posts/aws-storage-processx/index.qmd to s3://test-20240523-01/posts/aws-storage-processx/index.qmd
-Completed 12.5 KiB/492.0 KiB (65.5 KiB/s) with 4 file(s) remaining
-Completed 17.5 KiB/492.0 KiB (91.7 KiB/s) with 4 file(s) remaining
+Completed 1.9 KiB/490.5 KiB (10.5 KiB/s) with 7 file(s) remaining
+Completed 3.6 KiB/490.5 KiB (19.3 KiB/s) with 7 file(s) remaining
+upload: posts/logos-equipment/index.qmd to s3://test-20240523-01/posts/logos-equipment/index.qmd
+Completed 3.6 KiB/490.5 KiB (19.3 KiB/s) with 6 file(s) remaining
+Completed 7.9 KiB/490.5 KiB (40.0 KiB/s) with 6 file(s) remaining
 upload: posts/aws-storage-processx/index.rmarkdown to s3://test-20240523-01/posts/aws-storage-processx/index.rmarkdown
-Completed 17.5 KiB/492.0 KiB (91.7 KiB/s) with 3 file(s) remaining
-Completed 22.6 KiB/492.0 KiB (112.5 KiB/s) with 3 file(s) remaining
+Completed 7.9 KiB/490.5 KiB (40.0 KiB/s) with 5 file(s) remaining
+Completed 12.1 KiB/490.5 KiB (61.5 KiB/s) with 5 file(s) remaining
+upload: posts/aws-storage-processx/index.qmd to s3://test-20240523-01/posts/aws-storage-processx/index.qmd
+Completed 12.1 KiB/490.5 KiB (61.5 KiB/s) with 4 file(s) remaining
+Completed 16.0 KiB/490.5 KiB (77.6 KiB/s) with 4 file(s) remaining
+upload: posts/aws-storage-processx/image.jpg to s3://test-20240523-01/posts/aws-storage-processx/image.jpg
+Completed 16.0 KiB/490.5 KiB (77.6 KiB/s) with 3 file(s) remaining
+Completed 21.0 KiB/490.5 KiB (101.6 KiB/s) with 3 file(s) remaining
 upload: posts/snakecase/thumbnail.jpg to s3://test-20240523-01/posts/snakecase/thumbnail.jpg
-Completed 22.6 KiB/492.0 KiB (112.5 KiB/s) with 2 file(s) remaining
-Completed 63.3 KiB/492.0 KiB (193.1 KiB/s) with 2 file(s) remaining
+Completed 21.0 KiB/490.5 KiB (101.6 KiB/s) with 2 file(s) remaining
+Completed 61.8 KiB/490.5 KiB (192.5 KiB/s) with 2 file(s) remaining
 upload: posts/logos-equipment/image.jpg to s3://test-20240523-01/posts/logos-equipment/image.jpg
-Completed 63.3 KiB/492.0 KiB (193.1 KiB/s) with 1 file(s) remaining
-Completed 319.3 KiB/492.0 KiB (826.2 KiB/s) with 1 file(s) remaining
-Completed 492.0 KiB/492.0 KiB (641.5 KiB/s) with 1 file(s) remaining
+Completed 61.8 KiB/490.5 KiB (192.5 KiB/s) with 1 file(s) remaining
+Completed 317.8 KiB/490.5 KiB (716.7 KiB/s) with 1 file(s) remaining
+Completed 490.5 KiB/490.5 KiB (579.1 KiB/s) with 1 file(s) remaining
 upload: posts/snakecase/all.jpeg to s3://test-20240523-01/posts/snakecase/all.jpeg</code></pre>
 </div>
 </div>
@@ -405,50 +405,24 @@ Output:
 [10] "posts/test.txt"                -                                    </code></pre>
 </div>
 </div>
-<p>Success!! Lets delete the bucket</p>
+<p>Success!! Lets try to delete the bucket with <code>aws.s3::delete_bucket</code></p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># run_with_error_handling &lt;- function(call_expr) {</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   result &lt;- tryCatch({</span></span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="co">#     eval(call_expr)</span></span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co">#   }, error = function(e) {</span></span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="co">#     # Handle errors: e.g., print a custom error message</span></span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="co">#     cat("An error occurred: ", e$message, "\n")</span></span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co">#     NULL  # Return NULL or another appropriate value</span></span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="co">#   })</span></span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="co">#   </span></span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="co">#   if (is.null(result)) {</span></span>
-<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="co">#     cat("The operation failed.\n")</span></span>
-<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="co">#   } else {</span></span>
-<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a><span class="co">#     if (is.logical(result) &amp;&amp; result) {</span></span>
-<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a><span class="co">#       cat("The operation succeeded.\n")</span></span>
-<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a><span class="co">#     } else {</span></span>
-<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a><span class="co">#       cat("The operation completed but did not return a success indicator.\n")</span></span>
-<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a><span class="co">#       print(result)  # Print the result for further inspection</span></span>
-<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a><span class="co">#     }</span></span>
-<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a><span class="co">#   }</span></span>
-<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a><span class="co"># }</span></span>
-<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
-<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a><span class="co"># # Example usage with aws.s3::delete_bucket</span></span>
-<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a><span class="co"># run_with_error_handling(quote(aws.s3::delete_bucket("test-20240523-01")))</span></span>
-<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Example usage with another call</span></span>
-<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a><span class="co"># run_with_error_handling(quote(another_function_call(args)))</span></span>
-<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a>aws.s3<span class="sc">::</span><span class="fu">delete_bucket</span>(<span class="st">"test-20240523-01"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>aws.s3<span class="sc">::</span><span class="fu">delete_bucket</span>(<span class="st">"test-20240523-01"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] FALSE
 attr(,"x-amz-request-id")
-[1] "54VPM699PYPQ4B12"
+[1] "AWBEJ8K1ETAS8V94"
 attr(,"x-amz-id-2")
-[1] "0P3w/yPlADBu1yNMKc3xb8VE41ryyCBoYbgJLWp9f9BXBQv03kLLcDTg6x/0Hx4BWXcDbtbVCxQ="
+[1] "BKoy+xeW2Iz9MISK6ZNwo7kpR2QKc1K9lboiMnKVtRszt983ZeWD9GSo77Fx1/5vg09quV6AOzk="
 attr(,"content-type")
 [1] "application/xml"
 attr(,"transfer-encoding")
 [1] "chunked"
 attr(,"date")
-[1] "Thu, 23 May 2024 22:45:06 GMT"
+[1] "Thu, 23 May 2024 22:51:45 GMT"
 attr(,"server")
 [1] "AmazonS3"</code></pre>
 </div>
@@ -461,27 +435,27 @@ attr(,"server")
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sys_call</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>delete: s3://test-20240523-01/posts/aws-storage-processx/index.rmarkdown
-delete: s3://test-20240523-01/posts/aws-storage-processx/index.qmd
-delete: s3://test-20240523-01/posts/logos-equipment/index.qmd
-delete: s3://test-20240523-01/posts/logos-equipment/image.jpg
-delete: s3://test-20240523-01/posts/snakecase/thumbnail.jpg
+<pre><code>delete: s3://test-20240523-01/posts/_metadata.yml
 delete: s3://test-20240523-01/posts/snakecase/index.qmd
+delete: s3://test-20240523-01/posts/aws-storage-processx/index.qmd
+delete: s3://test-20240523-01/posts/logos-equipment/image.jpg
+delete: s3://test-20240523-01/posts/aws-storage-processx/index.rmarkdown
 delete: s3://test-20240523-01/posts/aws-storage-processx/image.jpg
-delete: s3://test-20240523-01/posts/_metadata.yml
+delete: s3://test-20240523-01/posts/snakecase/thumbnail.jpg
 delete: s3://test-20240523-01/posts/snakecase/all.jpeg
+delete: s3://test-20240523-01/posts/logos-equipment/index.qmd
 remove_bucket: test-20240523-01
 Exit status: 0 
 Output:
- delete: s3://test-20240523-01/posts/aws-storage-processx/index.rmarkdown
-delete: s3://test-20240523-01/posts/aws-storage-processx/index.qmd
-delete: s3://test-20240523-01/posts/logos-equipment/index.qmd
-delete: s3://test-20240523-01/posts/logos-equipment/image.jpg
-delete: s3://test-20240523-01/posts/snakecase/thumbnail.jpg
+ delete: s3://test-20240523-01/posts/_metadata.yml
 delete: s3://test-20240523-01/posts/snakecase/index.qmd
+delete: s3://test-20240523-01/posts/aws-storage-processx/index.qmd
+delete: s3://test-20240523-01/posts/logos-equipment/image.jpg
+delete: s3://test-20240523-01/posts/aws-storage-processx/index.rmarkdown
 delete: s3://test-20240523-01/posts/aws-storage-processx/image.jpg
-delete: s3://test-20240523-01/posts/_metadata.yml
+delete: s3://test-20240523-01/posts/snakecase/thumbnail.jpg
 delete: s3://test-20240523-01/posts/snakecase/all.jpeg
+delete: s3://test-20240523-01/posts/logos-equipment/index.qmd
 remove_bucket: test-20240523-01</code></pre>
 </div>
 </div>
