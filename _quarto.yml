@@ -10,7 +10,9 @@ website:
         href: https://github.com/NewGraphEnvironment?tab=repositories
 format:
   html:
-    theme: slate
+    theme:
+    - vapor
+    - custom.scss
     css: styles.css
 execute:
   freeze: auto
