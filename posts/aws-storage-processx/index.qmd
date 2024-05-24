@@ -3,7 +3,7 @@ title: "Syncing files to aws with R"
 author: "al"
 date: "2024-05-23"
 date-modified: "`r format(Sys.time(), '%Y-%m-%d')`"
-categories: [news, assets]
+categories: [news, assets, aws, s3, r, paws]
 image: "image.jpg"
 params:
   repo_owner: "NewGraphEnvironment"
@@ -23,44 +23,72 @@ options(knitr.kable.NAN = '--')
 
 Inspired by https://blog.djnavarro.net/posts/2022-03-17_using-aws-s3-in-r/ by [Danielle Navarro](https://github.com/djnavarro).
 
-Maybe unsurprisingly (now that I think about) it - this post will not build with github actions since it is using my machine.  Perhaps if we install the `aws` command line tool on the github actions runner and give it access to my account somehow it will work. That could be another post (or book perhaps) and 
-may require [GitHub Enterprise Server](https://docs.github.com/en/enterprise-server@3.11/admin/github-actions/enabling-github-actions-for-github-enterprise-server/enabling-github-actions-with-amazon-s3-storage).  Actually a bit confused as it seems to build somehow when I turn on the `pages` to build from the `gh-pages` branch.  Hmmm.
+Note to self - `/Users/airvine/Projects/repo/new_graphiti/_freeze/posts/aws-storage-processx/index/execute-results/html.json`
+is created when I render this document. This seems to be what is published to website after 1. the `github_actions` workflow is run to generate the `gh-pages` branch (on github runner) 2. the site is published with `gitpages` from `github`.
 
 "Quick" post to document where I got to with syncing files to aws with R. Didn't love the `aws.s3::sync` function because
-from what I could tell I could not tell it to delete files if they were not present locally or in a bucket (I could be wrong). So... figured why not just call the `aws` command line tool from R. `processx` is an insane package that might be the mother of all packages. It allows you to run command line tools from R wiwht flexibility for some things like setting the  directory 
-where the command is called in the function (big deal as far as I can tell). 
+from what I could tell I could not tell it to delete files if they were not present locally or in a bucket (I could be wrong). 
+
+Then climbed into `s3fs` which mirrors the `fs` package and seems a bit more user friendly than the `aws.s3` package
+for managing files.  It is created by [Dyfan Jones](https://github.com/DyfanJones) who also is the top contributor to
+`paws`!!  He seems like perhaps as much of a beast as one of the contributors to `s3fs` who is [Scott Chamberlain](https://github.com/sckott).
 
 
-We need to set up our `aws` account online. The blog above covers that I believe (I struggled through it a long time ago). I should use a `~/.aws/credentials` file but don't yet.  I have my credentials in my `~/.Renviron` file as well as in my `~/.bash_profile`. They are:
+For the sync issue figured why not just call the `aws` command line tool from R. `processx` is an insane package that might be the mother of all packages. It allows you to run command line tools from R with flexibility for some things like setting the directory where the command is called from in the `processx` called function (big deal as far as I can tell). 
+
+
+We need to set up our `aws` account online. The blog above from [Danielle Navarro](https://github.com/djnavarro) covers that I believe (I struggled through it a long time ago). I should use a `~/.aws/credentials` file but don't yet.  I have my credentials in my `~/.Renviron` file as well as in my `~/.bash_profile` (probably a ridiculous setup). They are:
 
     AWS_ACCESS_KEY_ID='my_key'
     AWS_DEFAULT_REGION='my_region'
     AWS_SECRET_ACCESS_KEY='my_secret_key'
 
-Let's us `aws.s3` to make a bucket and see what we are doing. Make a bucket called `test-02240523-01`.
 
 ```{r}
-library(aws.s3)
+# library(aws.s3)
 library(processx)
-
-
+# library(paws) #this is the mom.  Couple examples of us hashed out here
+library(s3fs)
+# library(aws.iam) #not useing - set permissions
+library(here) #helps us with working directory issues related to the `environment` we operate in when rendering
 ```
 
-See our buckets
+# See buckets using the `s3fs` package.  
+
+<br>
+
+Current buckets are:
 
 ```{r}
-aws.s3::bucketlist()
+s3fs::s3_dir_ls(refresh = TRUE) 
+
 ```
 
-Make a new bucket
+
+
+```{r s3-file-system, eval = FALSE}
+# First we set up our AWS s3 file system. I am actually not sure this is necessary but I did it.  Will turn the chunk off
+# to not repeat.
+# s3fs::s3_file_system(profile_name = "s3fs_example")
+
+```
+
+# Create a Bucket
+Let's generate the name of the bucket based on the name of the repo but due to `aws` [bucket naming rules](https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html) we need to swap out our underscores
+for hyphens!  Maybe a good enough reason to change our naming conventions for our repos on github!!
+
 
 ```{r}
-aws.s3::put_bucket("test-20240523-01")
+bucket_name <- basename(here::here()) |> 
+  stringr::str_replace_all("_", "-") 
+
+bucket_path <- s3fs::s3_path(bucket_name)
+
+s3fs::s3_bucket_create( bucket_path)  
 ```
 
-
-We build a little wrapper function to help us debug issues.
-
+# Sync Files to Bucket
+We build a little wrapper function to help us debug issues when running system commands with `processx`.
 
 ```{r}
 sys_call <- function(){
@@ -92,12 +120,13 @@ sys_call <- function(){
 
 <br>
 
-Then we specify our command and arguments. To achieve the desired behavior of including only files in the `assets/*` directory, you need to combine the --exclude and --include flags appropriately.:
+Then we specify our command and arguments. To achieve the desired behavior of including only files in the `assets/*` directory, you need to combine the order of `--exclude` and `--include` flags appropriately (exclude everything first thenn include what we want):
 
 
 ```{r}
 command <- "aws"
-args <- c('s3', 'sync', '.', 's3://test-20240523-01', '--delete', '--exclude', '*', '--include', 'posts/*')
+args <- c('s3', 'sync', '.', bucket_path, '--delete', '--exclude', '*', '--include', 'posts/*')
+
 working_directory = here::here() #we could just remove from funciton to get the current wd but its nice to have so we leave
 ```
 
@@ -107,18 +136,17 @@ Now lets put a tester file in our directory and sync it to our bucket. We will r
 file.create(here::here('posts/test.txt'))
 ```
 
-
-
-Run our little function
+Run our little function to sync the files to the bucket.
 
 ```{r}
 sys_call()
 ```
 
-Then we can list our bucket contents and capture them
+Then we can see our bucket contents - as well as list our bucket contents and capture them.
 
 ```{r}
-t <- aws.s3::get_bucket_df('test-20240523-01') 
+s3fs::s3_dir_tree(bucket_path)
+t <- s3fs::s3_dir_info(bucket_path, recurse = TRUE)
 ```
 
 Now we will remove `test.txt`
@@ -127,7 +155,7 @@ Now we will remove `test.txt`
 file.remove(here::here('posts/test.txt'))
 ```
 
-Now we sync again 
+Now we sync again.
 
 ```{r}
 sys_call()
@@ -136,24 +164,70 @@ sys_call()
 List our bucket contents and capture them again
 
 ```{r}
-t2 <- aws.s3::get_bucket_df('test-20240523-01') 
+s3_dir_tree(bucket_path)
+
+t2 <- s3fs::s3_dir_info(bucket_path, recurse = TRUE)
 ```
-Compare the two dataframes
+Compare the file structure before and after our sync.
 
 ```{r}
-waldo::compare(t$Key, t2$Key)
+waldo::compare(t$key, t2$key)
 ```
 
-Success!! Lets try to delete the bucket with `aws.s3::delete_bucket`
+Success!! 
 
-```{r eval = FALSE}
-aws.s3::delete_bucket("test-20240523-01")
-```
+# To Do
+We need to build the call to sync the other way (cloud to local) in a way that perhaps nukes local files if they are
+not on the cloud.  This is because we need to collaborate within our team so we do things like one person will change
+the name of images so when the other person syncs they will have only the newly named image in their local directory. 
 
-Won't let me do it... Think it is because we have used the command line tool to manage it... not sure.  Lets use the cli
+<br>
 
-```{r}
-args <- c('s3', 'rb', 's3://test-20240523-01', '--force')
+This all deserved consideration as it could get really messy from a few different angles (ie. one person adds files they 
+don't want nuked and then they get nukes. There are lots of different options for doing things so we will get there.)
+
+# Delete Bucket
+Lets delete the bucket.  
+
+
+```{r s3fs-delete-bucket-cli, eval = FALSE}
+#
+Here is the command line approach that we will turn off in favor of the s3fs approach.
+args <- c('s3', 'rb', bucket_path, '--force')
 sys_call()
+```
+
+
+```{r s3fs-delete-versions, eval = FALSE}
+# Here is the `s3fs` way to "delete" all the versions.  
+# list all the files in the bucket
+fl <- s3fs::s3_dir_ls(bucket_path, recurse = TRUE, refresh = TRUE)
+
+# list all the version info for all the files
+vi <- fl |> 
+  purrr::map_df(s3fs::s3_file_version_info)
+
+s3fs::s3_file_delete(path = vi$uri)
+```
+
+
+```{r}
+s3fs::s3_bucket_delete(bucket_path)
+```
+
+As we have tried this before we know that if we tell it we want to delete a bucket with versioned files in it we need to
+empty the bucket first including `delete_markers`.  That is easy in the `aws console` with th UI but seems tricky.
+There is a bunch of discussion on options to this here
+https://stackoverflow.com/questions/29809105/how-do-i-delete-a-versioned-bucket-in-aws-s3-using-the-cli .  Thinking a
+good way around it (and a topic for another post) would be to apply a `lifecycle-configuration` to the bucket that
+deletes all versions of files after a day - allowing you to delete bucket after they expire (as per the above post).
+Really we may want to have a `lifecycle-configuration` on all our versioned buckets to keep costs down anyway but
+deserves more thought and perhaps another post.
+
+```{r}
+# old notes
+# We are going to test creating a bucket with versioning on.  This has large implications for billing with some details
+# of how it works [here](https://aws.amazon.com/blogs/aws/amazon-s3-enhancement-versioning/) with example of costs [here](https://aws.amazon.com/s3/faqs/?nc1=h_ls).  Thinking we may want versioned buckets for things like `sqlite`
+# "snapshot" databases but definitely not for things like images. 
 ```
 
