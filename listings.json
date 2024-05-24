@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/aws-storage-permissions/index.html",
       "/posts/aws-storage-processx/index.html",
       "/posts/snakecase/index.html",
       "/posts/logos-equipment/index.html"

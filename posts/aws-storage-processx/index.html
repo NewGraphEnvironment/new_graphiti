@@ -148,6 +148,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
                                 <div class="quarto-categories">
                 <div class="quarto-category">news</div>
                 <div class="quarto-category">assets</div>
+                <div class="quarto-category">aws</div>
+                <div class="quarto-category">s3</div>
+                <div class="quarto-category">r</div>
+                <div class="quarto-category">paws</div>
               </div>
                   </div>
   </div>
@@ -172,7 +176,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div>
       <div class="quarto-title-meta-heading">Modified</div>
       <div class="quarto-title-meta-contents">
-        <p class="date-modified">May 23, 2024</p>
+        <p class="date-modified">May 24, 2024</p>
       </div>
     </div>
       
@@ -200,252 +204,353 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </details>
 </div>
 <p>Inspired by https://blog.djnavarro.net/posts/2022-03-17_using-aws-s3-in-r/ by <a href="https://github.com/djnavarro">Danielle Navarro</a>.</p>
-<p>Maybe unsurprisingly (now that I think about) it - this post will not build with github actions since it is using my machine. Perhaps if we install the <code>aws</code> command line tool on the github actions runner and give it access to my account somehow it will work. That could be another post (or book perhaps) and may require <a href="https://docs.github.com/en/enterprise-server@3.11/admin/github-actions/enabling-github-actions-for-github-enterprise-server/enabling-github-actions-with-amazon-s3-storage">GitHub Enterprise Server</a>. Actually a bit confused as it seems to build somehow when I turn on the <code>pages</code> to build from the <code>gh-pages</code> branch. Hmmm.</p>
-<p>“Quick” post to document where I got to with syncing files to aws with R. Didn’t love the <code>aws.s3::sync</code> function because from what I could tell I could not tell it to delete files if they were not present locally or in a bucket (I could be wrong). So… figured why not just call the <code>aws</code> command line tool from R. <code>processx</code> is an insane package that might be the mother of all packages. It allows you to run command line tools from R wiwht flexibility for some things like setting the directory where the command is called in the function (big deal as far as I can tell).</p>
-<p>We need to set up our <code>aws</code> account online. The blog above covers that I believe (I struggled through it a long time ago). I should use a <code>~/.aws/credentials</code> file but don’t yet. I have my credentials in my <code>~/.Renviron</code> file as well as in my <code>~/.bash_profile</code>. They are:</p>
+<p>Note to self - <code>/Users/airvine/Projects/repo/new_graphiti/_freeze/posts/aws-storage-processx/index/execute-results/html.json</code> is created when I render this document. This seems to be what is published to website after 1. the <code>github_actions</code> workflow is run to generate the <code>gh-pages</code> branch (on github runner) 2. the site is published with <code>gitpages</code> from <code>github</code>.</p>
+<p>“Quick” post to document where I got to with syncing files to aws with R. Didn’t love the <code>aws.s3::sync</code> function because from what I could tell I could not tell it to delete files if they were not present locally or in a bucket (I could be wrong).</p>
+<p>Then climbed into <code>s3fs</code> which mirrors the <code>fs</code> package and seems a bit more user friendly than the <code>aws.s3</code> package for managing files. It is created by <a href="https://github.com/DyfanJones">Dyfan Jones</a> who also is the top contributor to <code>paws</code>!! He seems like perhaps as much of a beast as one of the contributors to <code>s3fs</code> who is <a href="https://github.com/sckott">Scott Chamberlain</a>.</p>
+<p>For the sync issue figured why not just call the <code>aws</code> command line tool from R. <code>processx</code> is an insane package that might be the mother of all packages. It allows you to run command line tools from R with flexibility for some things like setting the directory where the command is called from in the <code>processx</code> called function (big deal as far as I can tell).</p>
+<p>We need to set up our <code>aws</code> account online. The blog above from <a href="https://github.com/djnavarro">Danielle Navarro</a> covers that I believe (I struggled through it a long time ago). I should use a <code>~/.aws/credentials</code> file but don’t yet. I have my credentials in my <code>~/.Renviron</code> file as well as in my <code>~/.bash_profile</code> (probably a ridiculous setup). They are:</p>
 <pre><code>AWS_ACCESS_KEY_ID='my_key'
 AWS_DEFAULT_REGION='my_region'
 AWS_SECRET_ACCESS_KEY='my_secret_key'</code></pre>
-<p>Let’s us <code>aws.s3</code> to make a bucket and see what we are doing. Make a bucket called <code>test-02240523-01</code>.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(aws.s3)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(processx)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># library(aws.s3)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(processx)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># library(paws) #this is the mom.  Couple examples of us hashed out here</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(s3fs)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># library(aws.iam) #not useing - set permissions</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(here) <span class="co">#helps us with working directory issues related to the `environment` we operate in when rendering</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>See our buckets</p>
+<section id="see-buckets-using-the-s3fs-package." class="level1">
+<h1>See buckets using the <code>s3fs</code> package.</h1>
+<p><br></p>
+<p>Current buckets are:</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>aws.s3<span class="sc">::</span><span class="fu">bucketlist</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output cell-output-stdout">
-<pre><code>  Bucket             CreationDate
-1  23cog 2023-03-17T00:07:12.000Z</code></pre>
-</div>
-</div>
-<p>Make a new bucket</p>
-<div class="cell">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>aws.s3<span class="sc">::</span><span class="fu">put_bucket</span>(<span class="st">"test-20240523-01"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_dir_ls</span>(<span class="at">refresh =</span> <span class="cn">TRUE</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] TRUE</code></pre>
+<pre><code>[1] "s3://23cog"</code></pre>
 </div>
 </div>
-<p>We build a little wrapper function to help us debug issues.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>sys_call <span class="ot">&lt;-</span> <span class="cf">function</span>(){</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>({</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    processx<span class="sc">::</span><span class="fu">run</span>(</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>      command,</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">args =</span> args,</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">echo =</span> <span class="cn">TRUE</span>,            <span class="co"># Print the command output live</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">wd =</span> working_directory, <span class="co"># Set the working directory</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">spinner =</span> <span class="cn">TRUE</span>,         <span class="co"># Show a spinner</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">timeout =</span> <span class="dv">60</span>            <span class="co"># Timeout after 60 seconds</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  }, <span class="at">error =</span> <span class="cf">function</span>(e) {</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Handle errors: e.g., print a custom error message</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"An error occurred: "</span>, e<span class="sc">$</span>message, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="cn">NULL</span>  <span class="co"># Return NULL or another appropriate value</span></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  })</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Check if the command was successful</span></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(result)) {</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"Exit status:"</span>, result<span class="sc">$</span>status, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"Output:</span><span class="sc">\n</span><span class="st">"</span>, result<span class="sc">$</span>stdout)</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"Failed to execute the command properly.</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># First we set up our AWS s3 file system. I am actually not sure this is necessary but I did it.  Will turn the chunk off</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># to not repeat.</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># s3fs::s3_file_system(profile_name = "s3fs_example")</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="create-a-bucket" class="level1">
+<h1>Create a Bucket</h1>
+<p>Let’s generate the name of the bucket based on the name of the repo but due to <code>aws</code> <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html">bucket naming rules</a> we need to swap out our underscores for hyphens! Maybe a good enough reason to change our naming conventions for our repos on github!!</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>bucket_name <span class="ot">&lt;-</span> <span class="fu">basename</span>(here<span class="sc">::</span><span class="fu">here</span>()) <span class="sc">|&gt;</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  stringr<span class="sc">::</span><span class="fu">str_replace_all</span>(<span class="st">"_"</span>, <span class="st">"-"</span>) </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>bucket_path <span class="ot">&lt;-</span> s3fs<span class="sc">::</span><span class="fu">s3_path</span>(bucket_name)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_bucket_create</span>( bucket_path)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "s3://new-graphiti"</code></pre>
+</div>
+</div>
+</section>
+<section id="sync-files-to-bucket" class="level1">
+<h1>Sync Files to Bucket</h1>
+<p>We build a little wrapper function to help us debug issues when running system commands with <code>processx</code>.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>sys_call <span class="ot">&lt;-</span> <span class="cf">function</span>(){</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>({</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    processx<span class="sc">::</span><span class="fu">run</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>      command,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">args =</span> args,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">echo =</span> <span class="cn">TRUE</span>,            <span class="co"># Print the command output live</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">wd =</span> working_directory, <span class="co"># Set the working directory</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">spinner =</span> <span class="cn">TRUE</span>,         <span class="co"># Show a spinner</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">timeout =</span> <span class="dv">60</span>            <span class="co"># Timeout after 60 seconds</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  }, <span class="at">error =</span> <span class="cf">function</span>(e) {</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Handle errors: e.g., print a custom error message</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"An error occurred: "</span>, e<span class="sc">$</span>message, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    <span class="cn">NULL</span>  <span class="co"># Return NULL or another appropriate value</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Check if the command was successful</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(result)) {</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"Exit status:"</span>, result<span class="sc">$</span>status, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"Output:</span><span class="sc">\n</span><span class="st">"</span>, result<span class="sc">$</span>stdout)</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"Failed to execute the command properly.</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p><br></p>
-<p>Then we specify our command and arguments. To achieve the desired behavior of including only files in the <code>assets/*</code> directory, you need to combine the –exclude and –include flags appropriately.:</p>
+<p>Then we specify our command and arguments. To achieve the desired behavior of including only files in the <code>assets/*</code> directory, you need to combine the order of <code>--exclude</code> and <code>--include</code> flags appropriately (exclude everything first thenn include what we want):</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>command <span class="ot">&lt;-</span> <span class="st">"aws"</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>args <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'s3'</span>, <span class="st">'sync'</span>, <span class="st">'.'</span>, <span class="st">'s3://test-20240523-01'</span>, <span class="st">'--delete'</span>, <span class="st">'--exclude'</span>, <span class="st">'*'</span>, <span class="st">'--include'</span>, <span class="st">'posts/*'</span>)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>working_directory <span class="ot">=</span> here<span class="sc">::</span><span class="fu">here</span>() <span class="co">#we could just remove from funciton to get the current wd but its nice to have so we leave</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>command <span class="ot">&lt;-</span> <span class="st">"aws"</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>args <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'s3'</span>, <span class="st">'sync'</span>, <span class="st">'.'</span>, bucket_path, <span class="st">'--delete'</span>, <span class="st">'--exclude'</span>, <span class="st">'*'</span>, <span class="st">'--include'</span>, <span class="st">'posts/*'</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>working_directory <span class="ot">=</span> here<span class="sc">::</span><span class="fu">here</span>() <span class="co">#we could just remove from funciton to get the current wd but its nice to have so we leave</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>Now lets put a tester file in our directory and sync it to our bucket. We will remove it later to test if it is removed on sync.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">file.create</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">'posts/test.txt'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">file.create</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">'posts/test.txt'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] TRUE</code></pre>
 </div>
 </div>
-<p>Run our little function</p>
+<p>Run our little function to sync the files to the bucket.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sys_call</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sys_call</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>Completed 237 Bytes/491.4 KiB (2.8 KiB/s) with 10 file(s) remaining
-upload: posts/_metadata.yml to s3://test-20240523-01/posts/_metadata.yml
-Completed 237 Bytes/491.4 KiB (2.8 KiB/s) with 9 file(s) remaining
-upload: posts/test.txt to s3://test-20240523-01/posts/test.txt    
-Completed 237 Bytes/491.4 KiB (2.8 KiB/s) with 8 file(s) remaining
-Completed 1.9 KiB/491.4 KiB (10.3 KiB/s) with 8 file(s) remaining 
-upload: posts/snakecase/index.qmd to s3://test-20240523-01/posts/snakecase/index.qmd
-Completed 1.9 KiB/491.4 KiB (10.3 KiB/s) with 7 file(s) remaining
-Completed 3.6 KiB/491.4 KiB (19.5 KiB/s) with 7 file(s) remaining
-upload: posts/logos-equipment/index.qmd to s3://test-20240523-01/posts/logos-equipment/index.qmd
-Completed 3.6 KiB/491.4 KiB (19.5 KiB/s) with 6 file(s) remaining
-Completed 7.5 KiB/491.4 KiB (39.4 KiB/s) with 6 file(s) remaining
-upload: posts/aws-storage-processx/image.jpg to s3://test-20240523-01/posts/aws-storage-processx/image.jpg
-Completed 7.5 KiB/491.4 KiB (39.4 KiB/s) with 5 file(s) remaining
-Completed 12.2 KiB/491.4 KiB (62.3 KiB/s) with 5 file(s) remaining
-upload: posts/aws-storage-processx/index.qmd to s3://test-20240523-01/posts/aws-storage-processx/index.qmd
-Completed 12.2 KiB/491.4 KiB (62.3 KiB/s) with 4 file(s) remaining
-Completed 16.9 KiB/491.4 KiB (81.2 KiB/s) with 4 file(s) remaining
-upload: posts/aws-storage-processx/index.rmarkdown to s3://test-20240523-01/posts/aws-storage-processx/index.rmarkdown
-Completed 16.9 KiB/491.4 KiB (81.2 KiB/s) with 3 file(s) remaining
-Completed 21.9 KiB/491.4 KiB (100.7 KiB/s) with 3 file(s) remaining
-upload: posts/snakecase/thumbnail.jpg to s3://test-20240523-01/posts/snakecase/thumbnail.jpg
-Completed 21.9 KiB/491.4 KiB (100.7 KiB/s) with 2 file(s) remaining
-Completed 62.7 KiB/491.4 KiB (203.9 KiB/s) with 2 file(s) remaining
-upload: posts/logos-equipment/image.jpg to s3://test-20240523-01/posts/logos-equipment/image.jpg
-Completed 62.7 KiB/491.4 KiB (203.9 KiB/s) with 1 file(s) remaining
-Completed 318.7 KiB/491.4 KiB (730.1 KiB/s) with 1 file(s) remaining
-Completed 491.4 KiB/491.4 KiB (296.9 KiB/s) with 1 file(s) remaining
-upload: posts/snakecase/all.jpeg to s3://test-20240523-01/posts/snakecase/all.jpeg
+<pre><code>Completed 237 Bytes/511.7 KiB (3.0 KiB/s) with 12 file(s) remaining
+upload: posts/_metadata.yml to s3://new-graphiti/posts/_metadata.yml
+Completed 237 Bytes/511.7 KiB (3.0 KiB/s) with 11 file(s) remaining
+Completed 2.0 KiB/511.7 KiB (11.9 KiB/s) with 11 file(s) remaining 
+upload: posts/logos-equipment/index.qmd to s3://new-graphiti/posts/logos-equipment/index.qmd
+Completed 2.0 KiB/511.7 KiB (11.9 KiB/s) with 10 file(s) remaining
+Completed 3.6 KiB/511.7 KiB (20.8 KiB/s) with 10 file(s) remaining
+upload: posts/snakecase/index.qmd to s3://new-graphiti/posts/snakecase/index.qmd
+Completed 3.6 KiB/511.7 KiB (20.8 KiB/s) with 9 file(s) remaining
+Completed 8.6 KiB/511.7 KiB (48.5 KiB/s) with 9 file(s) remaining
+upload: posts/snakecase/thumbnail.jpg to s3://new-graphiti/posts/snakecase/thumbnail.jpg
+Completed 8.6 KiB/511.7 KiB (48.5 KiB/s) with 8 file(s) remaining
+Completed 13.9 KiB/511.7 KiB (74.3 KiB/s) with 8 file(s) remaining
+upload: posts/aws-storage-permissions/index.qmd to s3://new-graphiti/posts/aws-storage-permissions/index.qmd
+Completed 13.9 KiB/511.7 KiB (74.3 KiB/s) with 7 file(s) remaining
+Completed 17.8 KiB/511.7 KiB (82.4 KiB/s) with 7 file(s) remaining
+upload: posts/aws-storage-processx/image.jpg to s3://new-graphiti/posts/aws-storage-processx/image.jpg
+Completed 17.8 KiB/511.7 KiB (82.4 KiB/s) with 6 file(s) remaining
+upload: posts/test.txt to s3://new-graphiti/posts/test.txt        
+Completed 17.8 KiB/511.7 KiB (82.4 KiB/s) with 5 file(s) remaining
+Completed 26.0 KiB/511.7 KiB (119.1 KiB/s) with 5 file(s) remaining
+upload: posts/aws-storage-processx/index.rmarkdown to s3://new-graphiti/posts/aws-storage-processx/index.rmarkdown
+Completed 26.0 KiB/511.7 KiB (119.1 KiB/s) with 4 file(s) remaining
+Completed 34.0 KiB/511.7 KiB (152.0 KiB/s) with 4 file(s) remaining
+upload: posts/aws-storage-permissions/image.jpg to s3://new-graphiti/posts/aws-storage-permissions/image.jpg
+Completed 34.0 KiB/511.7 KiB (152.0 KiB/s) with 3 file(s) remaining
+Completed 42.2 KiB/511.7 KiB (180.5 KiB/s) with 3 file(s) remaining
+upload: posts/aws-storage-processx/index.qmd to s3://new-graphiti/posts/aws-storage-processx/index.qmd
+Completed 42.2 KiB/511.7 KiB (180.5 KiB/s) with 2 file(s) remaining
+Completed 83.0 KiB/511.7 KiB (256.0 KiB/s) with 2 file(s) remaining
+upload: posts/logos-equipment/image.jpg to s3://new-graphiti/posts/logos-equipment/image.jpg
+Completed 83.0 KiB/511.7 KiB (256.0 KiB/s) with 1 file(s) remaining
+Completed 339.0 KiB/511.7 KiB (830.9 KiB/s) with 1 file(s) remaining
+Completed 511.7 KiB/511.7 KiB (654.4 KiB/s) with 1 file(s) remaining
+upload: posts/snakecase/all.jpeg to s3://new-graphiti/posts/snakecase/all.jpeg
 Exit status: 0 
 Output:
- Completed 237 Bytes/491.4 KiB (2.8 KiB/s) with 10 file(s) remaining
-upload: posts/_metadata.yml to s3://test-20240523-01/posts/_metadata.yml
-Completed 237 Bytes/491.4 KiB (2.8 KiB/s) with 9 file(s) remaining
-upload: posts/test.txt to s3://test-20240523-01/posts/test.txt    
-Completed 237 Bytes/491.4 KiB (2.8 KiB/s) with 8 file(s) remaining
-Completed 1.9 KiB/491.4 KiB (10.3 KiB/s) with 8 file(s) remaining 
-upload: posts/snakecase/index.qmd to s3://test-20240523-01/posts/snakecase/index.qmd
-Completed 1.9 KiB/491.4 KiB (10.3 KiB/s) with 7 file(s) remaining
-Completed 3.6 KiB/491.4 KiB (19.5 KiB/s) with 7 file(s) remaining
-upload: posts/logos-equipment/index.qmd to s3://test-20240523-01/posts/logos-equipment/index.qmd
-Completed 3.6 KiB/491.4 KiB (19.5 KiB/s) with 6 file(s) remaining
-Completed 7.5 KiB/491.4 KiB (39.4 KiB/s) with 6 file(s) remaining
-upload: posts/aws-storage-processx/image.jpg to s3://test-20240523-01/posts/aws-storage-processx/image.jpg
-Completed 7.5 KiB/491.4 KiB (39.4 KiB/s) with 5 file(s) remaining
-Completed 12.2 KiB/491.4 KiB (62.3 KiB/s) with 5 file(s) remaining
-upload: posts/aws-storage-processx/index.qmd to s3://test-20240523-01/posts/aws-storage-processx/index.qmd
-Completed 12.2 KiB/491.4 KiB (62.3 KiB/s) with 4 file(s) remaining
-Completed 16.9 KiB/491.4 KiB (81.2 KiB/s) with 4 file(s) remaining
-upload: posts/aws-storage-processx/index.rmarkdown to s3://test-20240523-01/posts/aws-storage-processx/index.rmarkdown
-Completed 16.9 KiB/491.4 KiB (81.2 KiB/s) with 3 file(s) remaining
-Completed 21.9 KiB/491.4 KiB (100.7 KiB/s) with 3 file(s) remaining
-upload: posts/snakecase/thumbnail.jpg to s3://test-20240523-01/posts/snakecase/thumbnail.jpg
-Completed 21.9 KiB/491.4 KiB (100.7 KiB/s) with 2 file(s) remaining
-Completed 62.7 KiB/491.4 KiB (203.9 KiB/s) with 2 file(s) remaining
-upload: posts/logos-equipment/image.jpg to s3://test-20240523-01/posts/logos-equipment/image.jpg
-Completed 62.7 KiB/491.4 KiB (203.9 KiB/s) with 1 file(s) remaining
-Completed 318.7 KiB/491.4 KiB (730.1 KiB/s) with 1 file(s) remaining
-Completed 491.4 KiB/491.4 KiB (296.9 KiB/s) with 1 file(s) remaining
-upload: posts/snakecase/all.jpeg to s3://test-20240523-01/posts/snakecase/all.jpeg</code></pre>
+ Completed 237 Bytes/511.7 KiB (3.0 KiB/s) with 12 file(s) remaining
+upload: posts/_metadata.yml to s3://new-graphiti/posts/_metadata.yml
+Completed 237 Bytes/511.7 KiB (3.0 KiB/s) with 11 file(s) remaining
+Completed 2.0 KiB/511.7 KiB (11.9 KiB/s) with 11 file(s) remaining 
+upload: posts/logos-equipment/index.qmd to s3://new-graphiti/posts/logos-equipment/index.qmd
+Completed 2.0 KiB/511.7 KiB (11.9 KiB/s) with 10 file(s) remaining
+Completed 3.6 KiB/511.7 KiB (20.8 KiB/s) with 10 file(s) remaining
+upload: posts/snakecase/index.qmd to s3://new-graphiti/posts/snakecase/index.qmd
+Completed 3.6 KiB/511.7 KiB (20.8 KiB/s) with 9 file(s) remaining
+Completed 8.6 KiB/511.7 KiB (48.5 KiB/s) with 9 file(s) remaining
+upload: posts/snakecase/thumbnail.jpg to s3://new-graphiti/posts/snakecase/thumbnail.jpg
+Completed 8.6 KiB/511.7 KiB (48.5 KiB/s) with 8 file(s) remaining
+Completed 13.9 KiB/511.7 KiB (74.3 KiB/s) with 8 file(s) remaining
+upload: posts/aws-storage-permissions/index.qmd to s3://new-graphiti/posts/aws-storage-permissions/index.qmd
+Completed 13.9 KiB/511.7 KiB (74.3 KiB/s) with 7 file(s) remaining
+Completed 17.8 KiB/511.7 KiB (82.4 KiB/s) with 7 file(s) remaining
+upload: posts/aws-storage-processx/image.jpg to s3://new-graphiti/posts/aws-storage-processx/image.jpg
+Completed 17.8 KiB/511.7 KiB (82.4 KiB/s) with 6 file(s) remaining
+upload: posts/test.txt to s3://new-graphiti/posts/test.txt        
+Completed 17.8 KiB/511.7 KiB (82.4 KiB/s) with 5 file(s) remaining
+Completed 26.0 KiB/511.7 KiB (119.1 KiB/s) with 5 file(s) remaining
+upload: posts/aws-storage-processx/index.rmarkdown to s3://new-graphiti/posts/aws-storage-processx/index.rmarkdown
+Completed 26.0 KiB/511.7 KiB (119.1 KiB/s) with 4 file(s) remaining
+Completed 34.0 KiB/511.7 KiB (152.0 KiB/s) with 4 file(s) remaining
+upload: posts/aws-storage-permissions/image.jpg to s3://new-graphiti/posts/aws-storage-permissions/image.jpg
+Completed 34.0 KiB/511.7 KiB (152.0 KiB/s) with 3 file(s) remaining
+Completed 42.2 KiB/511.7 KiB (180.5 KiB/s) with 3 file(s) remaining
+upload: posts/aws-storage-processx/index.qmd to s3://new-graphiti/posts/aws-storage-processx/index.qmd
+Completed 42.2 KiB/511.7 KiB (180.5 KiB/s) with 2 file(s) remaining
+Completed 83.0 KiB/511.7 KiB (256.0 KiB/s) with 2 file(s) remaining
+upload: posts/logos-equipment/image.jpg to s3://new-graphiti/posts/logos-equipment/image.jpg
+Completed 83.0 KiB/511.7 KiB (256.0 KiB/s) with 1 file(s) remaining
+Completed 339.0 KiB/511.7 KiB (830.9 KiB/s) with 1 file(s) remaining
+Completed 511.7 KiB/511.7 KiB (654.4 KiB/s) with 1 file(s) remaining
+upload: posts/snakecase/all.jpeg to s3://new-graphiti/posts/snakecase/all.jpeg</code></pre>
 </div>
 </div>
-<p>Then we can list our bucket contents and capture them</p>
+<p>Then we can see our bucket contents - as well as list our bucket contents and capture them.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>t <span class="ot">&lt;-</span> aws.s3<span class="sc">::</span><span class="fu">get_bucket_df</span>(<span class="st">'test-20240523-01'</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_dir_tree</span>(bucket_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>s3://new-graphiti
+└── posts
+    ├── _metadata.yml
+    ├── test.txt
+    ├── aws-storage-permissions
+    │   ├── image.jpg
+    │   └── index.qmd
+    ├── aws-storage-processx
+    │   ├── image.jpg
+    │   ├── index.qmd
+    │   └── index.rmarkdown
+    ├── logos-equipment
+    │   ├── image.jpg
+    │   └── index.qmd
+    └── snakecase
+        ├── all.jpeg
+        ├── index.qmd
+        └── thumbnail.jpg</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>t <span class="ot">&lt;-</span> s3fs<span class="sc">::</span><span class="fu">s3_dir_info</span>(bucket_path, <span class="at">recurse =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>Now we will remove <code>test.txt</code></p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">file.remove</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">'posts/test.txt'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">file.remove</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">'posts/test.txt'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] TRUE</code></pre>
 </div>
 </div>
-<p>Now we sync again</p>
+<p>Now we sync again.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sys_call</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sys_call</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>delete: s3://test-20240523-01/posts/test.txt
+<pre><code>delete: s3://new-graphiti/posts/test.txt
 Exit status: 0 
 Output:
- delete: s3://test-20240523-01/posts/test.txt</code></pre>
+ delete: s3://new-graphiti/posts/test.txt</code></pre>
 </div>
 </div>
 <p>List our bucket contents and capture them again</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>t2 <span class="ot">&lt;-</span> aws.s3<span class="sc">::</span><span class="fu">get_bucket_df</span>(<span class="st">'test-20240523-01'</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-</div>
-<p>Compare the two dataframes</p>
-<div class="cell">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>waldo<span class="sc">::</span><span class="fu">compare</span>(t<span class="sc">$</span>Key, t2<span class="sc">$</span>Key)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">s3_dir_tree</span>(bucket_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>     old                             | new                                
- [7] "posts/snakecase/all.jpeg"      | "posts/snakecase/all.jpeg"      [7]
- [8] "posts/snakecase/index.qmd"     | "posts/snakecase/index.qmd"     [8]
- [9] "posts/snakecase/thumbnail.jpg" | "posts/snakecase/thumbnail.jpg" [9]
-[10] "posts/test.txt"                -                                    </code></pre>
+<pre><code>s3://new-graphiti
+└── posts
+    ├── _metadata.yml
+    ├── aws-storage-permissions
+    │   ├── image.jpg
+    │   └── index.qmd
+    ├── aws-storage-processx
+    │   ├── image.jpg
+    │   ├── index.qmd
+    │   └── index.rmarkdown
+    ├── logos-equipment
+    │   ├── image.jpg
+    │   └── index.qmd
+    └── snakecase
+        ├── all.jpeg
+        ├── index.qmd
+        └── thumbnail.jpg</code></pre>
 </div>
-</div>
-<p>Success!! Lets try to delete the bucket with <code>aws.s3::delete_bucket</code></p>
-<div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>aws.s3<span class="sc">::</span><span class="fu">delete_bucket</span>(<span class="st">"test-20240523-01"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>t2 <span class="ot">&lt;-</span> s3fs<span class="sc">::</span><span class="fu">s3_dir_info</span>(bucket_path, <span class="at">recurse =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>Won’t let me do it… Think it is because we have used the command line tool to manage it… not sure. Lets use the cli</p>
+<p>Compare the file structure before and after our sync.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>args <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'s3'</span>, <span class="st">'rb'</span>, <span class="st">'s3://test-20240523-01'</span>, <span class="st">'--force'</span>)</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sys_call</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>waldo<span class="sc">::</span><span class="fu">compare</span>(t<span class="sc">$</span>key, t2<span class="sc">$</span>key)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>delete: s3://test-20240523-01/posts/aws-storage-processx/index.rmarkdown
-delete: s3://test-20240523-01/posts/snakecase/index.qmd
-delete: s3://test-20240523-01/posts/_metadata.yml
-delete: s3://test-20240523-01/posts/snakecase/all.jpeg
-delete: s3://test-20240523-01/posts/logos-equipment/image.jpg
-delete: s3://test-20240523-01/posts/snakecase/thumbnail.jpg
-delete: s3://test-20240523-01/posts/logos-equipment/index.qmd
-delete: s3://test-20240523-01/posts/aws-storage-processx/index.qmd
-delete: s3://test-20240523-01/posts/aws-storage-processx/image.jpg
-remove_bucket: test-20240523-01
-Exit status: 0 
-Output:
- delete: s3://test-20240523-01/posts/aws-storage-processx/index.rmarkdown
-delete: s3://test-20240523-01/posts/snakecase/index.qmd
-delete: s3://test-20240523-01/posts/_metadata.yml
-delete: s3://test-20240523-01/posts/snakecase/all.jpeg
-delete: s3://test-20240523-01/posts/logos-equipment/image.jpg
-delete: s3://test-20240523-01/posts/snakecase/thumbnail.jpg
-delete: s3://test-20240523-01/posts/logos-equipment/index.qmd
-delete: s3://test-20240523-01/posts/aws-storage-processx/index.qmd
-delete: s3://test-20240523-01/posts/aws-storage-processx/image.jpg
-remove_bucket: test-20240523-01</code></pre>
+<pre><code>     old                             | new                                 
+ [9] "posts/snakecase/all.jpeg"      | "posts/snakecase/all.jpeg"      [9] 
+[10] "posts/snakecase/index.qmd"     | "posts/snakecase/index.qmd"     [10]
+[11] "posts/snakecase/thumbnail.jpg" | "posts/snakecase/thumbnail.jpg" [11]
+[12] "posts/test.txt"                -                                     </code></pre>
 </div>
+</div>
+<p>Success!!</p>
+</section>
+<section id="to-do" class="level1">
+<h1>To Do</h1>
+<p>We need to build the call to sync the other way (cloud to local) in a way that perhaps nukes local files if they are not on the cloud. This is because we need to collaborate within our team so we do things like one person will change the name of images so when the other person syncs they will have only the newly named image in their local directory.</p>
+<p><br></p>
+<p>This all deserved consideration as it could get really messy from a few different angles (ie. one person adds files they don’t want nuked and then they get nukes. There are lots of different options for doing things so we will get there.)</p>
+</section>
+<section id="delete-bucket" class="level1">
+<h1>Delete Bucket</h1>
+<p>Lets delete the bucket.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>Here is the command line approach that we will turn off <span class="cf">in</span> favor of the s3fs approach.</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>args <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'s3'</span>, <span class="st">'rb'</span>, bucket_path, <span class="st">'--force'</span>)</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sys_call</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Here is the `s3fs` way to "delete" all the versions.  </span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co"># list all the files in the bucket</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>fl <span class="ot">&lt;-</span> s3fs<span class="sc">::</span><span class="fu">s3_dir_ls</span>(bucket_path, <span class="at">recurse =</span> <span class="cn">TRUE</span>, <span class="at">refresh =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="co"># list all the version info for all the files</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>vi <span class="ot">&lt;-</span> fl <span class="sc">|&gt;</span> </span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map_df</span>(s3fs<span class="sc">::</span>s3_file_version_info)</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_file_delete</span>(<span class="at">path =</span> vi<span class="sc">$</span>uri)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_bucket_delete</span>(bucket_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "s3://new-graphiti"</code></pre>
+</div>
+</div>
+<p>As we have tried this before we know that if we tell it we want to delete a bucket with versioned files in it we need to empty the bucket first including <code>delete_markers</code>. That is easy in the <code>aws console</code> with th UI but seems tricky. There is a bunch of discussion on options to this here https://stackoverflow.com/questions/29809105/how-do-i-delete-a-versioned-bucket-in-aws-s3-using-the-cli . Thinking a good way around it (and a topic for another post) would be to apply a <code>lifecycle-configuration</code> to the bucket that deletes all versions of files after a day - allowing you to delete bucket after they expire (as per the above post). Really we may want to have a <code>lifecycle-configuration</code> on all our versioned buckets to keep costs down anyway but deserves more thought and perhaps another post.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># old notes</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="co"># We are going to test creating a bucket with versioning on.  This has large implications for billing with some details</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="co"># of how it works [here](https://aws.amazon.com/blogs/aws/amazon-s3-enhancement-versioning/) with example of costs [here](https://aws.amazon.com/s3/faqs/?nc1=h_ls).  Thinking we may want versioned buckets for things like `sqlite`</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="co"># "snapshot" databases but definitely not for things like images. </span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
