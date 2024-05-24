@@ -1,0 +1,218 @@
+---
+title: "Setting aws bucket permissions with R"
+author: "al"
+date: "2024-05-24"
+date-modified: "`r format(Sys.time(), '%Y-%m-%d')`"
+categories: [news, assets, aws, s3, r, paws]
+image: "image.jpg"
+params:
+  repo_owner: "NewGraphEnvironment"
+  repo_name: "new_graphiti"
+format: 
+  html:
+    code-fold: true
+---
+
+Here we will set up an s3 bucket with a policy that allows the public to read from the bucket, but not from a specific
+directory, and allows a particular `aws_account_id` to write to the bucket. Although we are stoked on the `s3fs` package
+for working with s3 buckets, we will use the `paws` package more than perhaps necessary here - only to learn about how
+it all works. Seems like `s3fs` is the way to go for common moves but `paws` is the "mom" providing the structure and
+guidance to that package.
+
+```{r}
+library(paws)
+library(here)
+library(jsonlite)
+library(stringr)
+library(s3fs)
+```
+
+List our current buckets
+
+```{r}
+s3 <- paws::s3()
+s3$list_buckets()
+```
+
+# Create Bucket
+
+Let's create a bucket called the same name as this repository.
+
+```{r}
+my_bucket_name <- basename(here::here()) |> 
+  stringr::str_replace_all("_", "-") 
+
+bucket_path <- s3fs::s3_path(my_bucket_name)
+
+s3$create_bucket(Bucket = my_bucket_name,
+  CreateBucketConfiguration = list(
+    LocationConstraint = Sys.getenv("AWS_DEFAULT_REGION")
+  ))
+
+```
+
+# Add the policy to the bucket.
+
+1.  **Important** - First we need to allow "new public policies" to be added to the bucket.
+
+```{r}
+s3$delete_public_access_block(
+  Bucket = my_bucket_name
+)
+```
+
+2.  Write the policy for the bucket Here is a function to make a generic policy for an s3 bucket that allows public to 
+read from the bucket, but not from a specific directory, and allows a particular `aws_account_id` to write to the bucket. 
+Plus + it allows you to provide `Presigned URLs` so we can provide temporary access to private objects without having to 
+change the overall bucket or object permissions. 
+
+
+```{r}
+aws_policy_write <- function(bucket_name, bucket_dir_private, aws_account_id, write_json = FALSE, dir_output = "policy", file_name = "policy.json") {
+  policy <- list(
+    Statement = list(
+      list(
+        Effect = "Allow",
+        Principal = "*",
+        Action = "s3:GetObject",
+        Resource = paste0("arn:aws:s3:::", bucket_name, "/*")
+      ),
+      list(
+        Effect = "Deny",
+        Principal = "*",
+        Action = "s3:GetObject",
+        Resource = paste0("arn:aws:s3:::", bucket_name, "/", bucket_dir_private, "/*"),
+        Condition = list(
+          StringNotEquals = list(
+            "aws:UserAgent" = c("S3Console", "paws-storage")
+          )
+        )
+      ),
+      list(
+        Effect = "Allow",
+        Principal = list(AWS = paste0("arn:aws:iam::", aws_account_id, ":root")),
+        Action = c("s3:DeleteObject", "s3:PutObject"),
+        Resource = paste0("arn:aws:s3:::", bucket_name, "/*")
+      )
+    )
+  )
+  
+  json_policy <- jsonlite::toJSON(policy, pretty = TRUE, auto_unbox = TRUE)
+  
+  if (write_json) {
+  dir.create(dir_output, showWarnings = FALSE)
+  output_path <- file.path(dir_output, file_name)
+  write(json_policy, file = output_path)
+    message("Policy written to ", output_path)
+  }else{
+    return(json_policy)
+  }
+}
+
+```
+
+Now we can write the policy to the bucket.
+
+```{r}
+my_policy <- aws_policy_write(bucket_name = my_bucket_name, 
+                         bucket_dir_private = "private", 
+                         aws_account_id = Sys.getenv("AWS_ACCOUNT_ID"),
+                         write_json = FALSE
+                         )
+
+s3$put_bucket_policy(
+  Bucket = my_bucket_name,
+  Policy = my_policy,
+  ExpectedBucketOwner = Sys.getenv("AWS_ACCOUNT_ID")
+)
+```
+
+Check the policy was added correctly.
+
+```{r}
+# this is cool
+s3$get_bucket_policy(my_bucket_name)
+
+```
+
+# Add some files to the bucket
+
+First we add a photo to the main bucket. Going to use `s3fs` for this since I haven't actually done just one file yet... We are using the `here` package to get the path to the image due to rendering complexities.
+
+```{r}
+s3fs::s3_file_copy(
+  path = paste0(here::here(), "/posts/aws-storage-permissions/image.jpg"),
+  bucket_path
+)
+```
+
+Then we add one to the private directory.
+
+```{r}
+
+s3fs::s3_dir_create(
+  path = paste0(bucket_path, "/private")
+)
+
+
+s3fs::s3_file_copy(
+  path = paste0(here::here(), "/posts/aws-storage-permissions/image.jpg"),
+  paste0(bucket_path, "/private")
+)
+
+```
+
+# Access the bucket
+
+Let's see if we can add the images to this post.
+
+Create the paths to the images.
+
+```{r}
+# s3fs::s3_dir_info(bucket_path, recurse = TRUE)
+image_path <- paste0("https://", my_bucket_name, ".s3.amazonaws.com/image.jpg")
+image_path_private <- paste0("https://", my_bucket_name, ".s3.amazonaws.com/private/image.jpg")
+
+```
+Access the public image.
+
+```{r}
+
+knitr::include_graphics(image_path)
+```
+
+Good to go.
+
+
+And now access the private image.
+
+```{r}
+knitr::include_graphics(image_path_private)
+```
+
+💣 Jackpot! We have the image in the bucket but can't access them from the post.
+
+ 
+
+
+```{r eval=FALSE}
+
+# Provide temporary access to an object
+# Can't get this to work yet so will come back to it.
+knitr::include_graphics(
+  s3fs::s3_file_url(
+    paste0(bucket_path, "/private", "/image.jpg")
+  )
+)
+```
+
+
+
+```{r bucket-delete, eval=FALSE}
+# Delete the bucket
+# Burn down the bucket 🔥.  If we try to use `s3$delete_bucket(Bucket = my_bucket_name)` we will get an error because the 
+# bucket is not empty. `s3fs::s3_bucket_delete(bucket_path)` works fine though.
+
+s3fs::s3_bucket_delete(bucket_path)
+
+```
