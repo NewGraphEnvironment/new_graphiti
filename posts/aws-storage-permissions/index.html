@@ -266,7 +266,7 @@ $Owner$ID
 <section id="add-the-policy-to-the-bucket." class="level1">
 <h1>Add the policy to the bucket.</h1>
 <ol type="1">
-<li><strong>Important</strong> - First we need to allow “new public policies” to be added to the bucket.</li>
+<li><strong>Important</strong> - First we need to allow “new public policies” to be added to the bucket. We do this by deleteing the public access block. This is a security feature that prevents public access to the bucket. We will remove it so we can add our own policy. Took a while to catch this.</li>
 </ol>
 <div class="cell">
 <details class="code-fold">
@@ -282,6 +282,7 @@ $Owner$ID
 <ol start="2" type="1">
 <li>Write the policy for the bucket Here is a function to make a generic policy for an s3 bucket that allows public to read from the bucket, but not from a specific directory, and allows a particular <code>aws_account_id</code> to write to the bucket. Plus + it allows you to provide <code>Presigned URLs</code> so we can provide temporary access to private objects without having to change the overall bucket or object permissions.</li>
 </ol>
+<p>Key thing here is that if we want a user to override the policy placed on a directory or file after we <code>Deny</code> access we need to add a condition to the policy that exempts the user (<code>paste0("arn:aws:iam::", aws_account_id, ":user/", user_access_permission)</code>) from the <code>Deny</code>.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -354,34 +355,31 @@ $Owner$ID
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>my_policy <span class="ot">&lt;-</span> <span class="fu">aws_policy_write</span>(<span class="at">bucket_name =</span> my_bucket_name, </span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>                         <span class="at">bucket_dir_private =</span> <span class="st">"private"</span>,</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">aws_account_id =</span> <span class="fu">Sys.getenv</span>(<span class="st">"AWS_ACCOUNT_ID"</span>),</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">user_access_permission =</span> <span class="st">"airvine"</span>,</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">write_json =</span> <span class="cn">FALSE</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>                         )</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>s3<span class="sc">$</span><span class="fu">put_bucket_policy</span>(</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">Bucket =</span> my_bucket_name,</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">Policy =</span> my_policy,</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">ExpectedBucketOwner =</span> <span class="fu">Sys.getenv</span>(<span class="st">"AWS_ACCOUNT_ID"</span>)</span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># run the function to build the json policy statement</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>my_policy <span class="ot">&lt;-</span> <span class="fu">aws_policy_write</span>(<span class="at">bucket_name =</span> my_bucket_name, </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">bucket_dir_private =</span> <span class="st">"private"</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">aws_account_id =</span> <span class="fu">Sys.getenv</span>(<span class="st">"AWS_ACCOUNT_ID"</span>),</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">user_access_permission =</span> <span class="st">"airvine"</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>                         <span class="at">write_json =</span> <span class="cn">FALSE</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>                         )</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="co"># push the policy to the bucket</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>s3<span class="sc">$</span><span class="fu">put_bucket_policy</span>(</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">Bucket =</span> my_bucket_name,</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">Policy =</span> my_policy,</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">ExpectedBucketOwner =</span> <span class="fu">Sys.getenv</span>(<span class="st">"AWS_ACCOUNT_ID"</span>)</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>list()</code></pre>
 </div>
 </div>
-<p>Check the policy was added correctly.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># this is cool</span></span>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># this is cool - Check the policy was added correctly.</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>s3<span class="sc">$</span><span class="fu">get_bucket_policy</span>(my_bucket_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-stdout">
-<pre><code>$Policy
-[1] "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"s3:GetObject\",\"Resource\":\"arn:aws:s3:::new-graphiti/*\"},{\"Effect\":\"Deny\",\"Principal\":\"*\",\"Action\":\"s3:GetObject\",\"Resource\":\"arn:aws:s3:::new-graphiti/private/*\",\"Condition\":{\"StringNotEquals\":{\"aws:PrincipalArn\":\"arn:aws:iam::414155577829:user/airvine\"}}},{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::414155577829:root\"},\"Action\":[\"s3:DeleteObject\",\"s3:PutObject\"],\"Resource\":\"arn:aws:s3:::new-graphiti/*\"}]}"</code></pre>
-</div>
 </div>
 </section>
 <section id="add-some-files-to-the-bucket" class="level1">
@@ -390,10 +388,10 @@ $Owner$ID
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_file_copy</span>(</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">path =</span> <span class="fu">paste0</span>(here<span class="sc">::</span><span class="fu">here</span>(), <span class="st">"/posts/aws-storage-permissions/image.jpg"</span>),</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  bucket_path</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_file_copy</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">path =</span> <span class="fu">paste0</span>(here<span class="sc">::</span><span class="fu">here</span>(), <span class="st">"/posts/aws-storage-permissions/image.jpg"</span>),</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  bucket_path</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "s3://new-graphiti/image.jpg"</code></pre>
@@ -403,19 +401,19 @@ $Owner$ID
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_dir_create</span>(</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">path =</span> <span class="fu">paste0</span>(bucket_path, <span class="st">"/private"</span>)</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_dir_create</span>(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">path =</span> <span class="fu">paste0</span>(bucket_path, <span class="st">"/private"</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "s3://new-graphiti/private"</code></pre>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_file_copy</span>(</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">path =</span> <span class="fu">paste0</span>(here<span class="sc">::</span><span class="fu">here</span>(), <span class="st">"/posts/aws-storage-permissions/image.jpg"</span>),</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">paste0</span>(bucket_path, <span class="st">"/private"</span>)</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_file_copy</span>(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">path =</span> <span class="fu">paste0</span>(here<span class="sc">::</span><span class="fu">here</span>(), <span class="st">"/posts/aws-storage-permissions/image.jpg"</span>),</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">paste0</span>(bucket_path, <span class="st">"/private"</span>)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "s3://new-graphiti/private/image.jpg"</code></pre>
@@ -429,16 +427,16 @@ $Owner$ID
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># s3fs::s3_dir_info(bucket_path, recurse = TRUE)</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>image_path <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://"</span>, my_bucket_name, <span class="st">".s3.amazonaws.com/image.jpg"</span>)</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>image_path_private <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://"</span>, my_bucket_name, <span class="st">".s3.amazonaws.com/private/image.jpg"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># s3fs::s3_dir_info(bucket_path, recurse = TRUE)</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>image_path <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://"</span>, my_bucket_name, <span class="st">".s3.amazonaws.com/image.jpg"</span>)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>image_path_private <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://"</span>, my_bucket_name, <span class="st">".s3.amazonaws.com/private/image.jpg"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>Access the public image.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(image_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(image_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -453,7 +451,7 @@ $Owner$ID
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(image_path_private)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(image_path_private)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -467,22 +465,22 @@ $Owner$ID
 </section>
 <section id="provide-temporary-access-to-an-object" class="level1">
 <h1>Provide temporary access to an object</h1>
-<p>Because we granted ourselves (airvine in this case) access to the private directory, we can create a <code>Presigned URL</code> to provide temporary access to the private image. We will set the maximum of 7 days for the URL to be valid. That means that on 2024-06-01 02:30 the URL will no longer work and the image below will not appear.</p>
+<p>Because we granted ourselves access to the private directory and our <code>IAM</code> roles have the correct privileges, we can create a <code>Presigned URL</code> to provide temporary access to the private image. We will set the maximum of 7 days for the URL to be valid. That means that at 2024-06-01 02:43 the URL will no longer work and the image below will no longer render in this post!</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  s3fs<span class="sc">::</span><span class="fu">s3_file_url</span>(</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">s3_dir_ls</span>(<span class="fu">paste0</span>(bucket_path, <span class="st">"/private"</span>)),</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    <span class="dv">604800</span>,</span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"get_object"</span></span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  s3fs<span class="sc">::</span><span class="fu">s3_file_url</span>(</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">s3_dir_ls</span>(<span class="fu">paste0</span>(bucket_path, <span class="st">"/private"</span>)),</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    <span class="dv">604800</span>,</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"get_object"</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="https://new-graphiti.s3.us-west-2.amazonaws.com/private/image.jpg?AWSAccessKeyId=AKIAWA3MYTHSXCSVLM5N&amp;Expires=1717234235&amp;Signature=i9d4Gf%2B2kJVdyLBSbP8E6WOq%2Fx4%3D" class="img-fluid figure-img"></p>
+<p><img src="https://new-graphiti.s3.us-west-2.amazonaws.com/private/image.jpg?AWSAccessKeyId=AKIAWA3MYTHSXCSVLM5N&amp;Expires=1717235001&amp;Signature=eKPwXECfPU9BB%2F99pA56%2B6juVWc%3D" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -490,27 +488,27 @@ $Owner$ID
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># this is the cmd line way</span></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>url_file_share <span class="ot">&lt;-</span> <span class="fu">s3_dir_ls</span>(<span class="fu">paste0</span>(bucket_path, <span class="st">"/private"</span>))</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>command <span class="ot">&lt;-</span> <span class="st">"aws"</span></span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>args <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'s3'</span>, <span class="st">'presign'</span>, url_file_share, <span class="st">'--expires-in'</span>, <span class="st">'604800'</span>)</span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>working_directory <span class="ot">=</span> here<span class="sc">::</span><span class="fu">here</span>() <span class="co">#we could just remove from funciton to get the current wd but its nice to have so we leave</span></span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="co"># loaded this function from the other file. should put in functions file or package</span></span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="fu">sys_call</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># this is the cmd line way</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>url_file_share <span class="ot">&lt;-</span> <span class="fu">s3_dir_ls</span>(<span class="fu">paste0</span>(bucket_path, <span class="st">"/private"</span>))</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>command <span class="ot">&lt;-</span> <span class="st">"aws"</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>args <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'s3'</span>, <span class="st">'presign'</span>, url_file_share, <span class="st">'--expires-in'</span>, <span class="st">'604800'</span>)</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>working_directory <span class="ot">=</span> here<span class="sc">::</span><span class="fu">here</span>() <span class="co">#we could just remove from funciton to get the current wd but its nice to have so we leave</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a><span class="co"># loaded this function from the other file. should put in functions file or package</span></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a><span class="fu">sys_call</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>In order to rerun our post we need to delete the bucket. When we do rerun - we use the <code>s3fs</code> package to do it</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Dont delete the bucket or the post wont render! ha</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Burn down the bucket 🔥.  If we try to use `s3$delete_bucket(Bucket = my_bucket_name)` we will get an error because the </span></span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="co"># bucket is not empty. </span></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="co">#`s3fs::s3_bucket_delete(bucket_path)` works fine though.</span></span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_bucket_delete</span>(bucket_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Dont delete the bucket or the post wont render! ha</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Burn down the bucket 🔥.  If we try to use `s3$delete_bucket(Bucket = my_bucket_name)` we will get an error because the </span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="co"># bucket is not empty. </span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="co">#`s3fs::s3_bucket_delete(bucket_path)` works fine though.</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_bucket_delete</span>(bucket_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 
