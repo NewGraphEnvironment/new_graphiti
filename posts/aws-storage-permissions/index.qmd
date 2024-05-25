@@ -58,7 +58,9 @@ s3$create_bucket(Bucket = my_bucket_name,
 
 # Add the policy to the bucket.
 
-1.  **Important** - First we need to allow "new public policies" to be added to the bucket.
+1.  **Important** - First we need to allow "new public policies" to be added to the bucket. We do this by deleteing the 
+    public access block. This is a security feature that prevents public access to the bucket. We will remove it so we can 
+    add our own policy. Took a while to catch this.
 
 ```{r policy-delete}
 s3$delete_public_access_block(
@@ -70,6 +72,10 @@ s3$delete_public_access_block(
 read from the bucket, but not from a specific directory, and allows a particular `aws_account_id` to write to the bucket. 
 Plus + it allows you to provide `Presigned URLs` so we can provide temporary access to private objects without having to 
 change the overall bucket or object permissions. 
+
+Key thing here is that if we want a user to override the policy placed on a directory or file after we `Deny` access we
+need to add a condition to the policy that exempts the user (`paste0("arn:aws:iam::", aws_account_id, ":user/", user_access_permission)`)
+from the `Deny`. 
 
 
 ```{r policy-fuction}
@@ -143,6 +149,7 @@ aws_policy_write <- function(bucket_name,
 Now we can write the policy to the bucket.
 
 ```{r}
+# run the function to build the json policy statement
 my_policy <- aws_policy_write(bucket_name = my_bucket_name, 
                          bucket_dir_private = "private",
                          aws_account_id = Sys.getenv("AWS_ACCOUNT_ID"),
@@ -150,6 +157,7 @@ my_policy <- aws_policy_write(bucket_name = my_bucket_name,
                          write_json = FALSE
                          )
 
+# push the policy to the bucket
 s3$put_bucket_policy(
   Bucket = my_bucket_name,
   Policy = my_policy,
@@ -157,10 +165,9 @@ s3$put_bucket_policy(
 )
 ```
 
-Check the policy was added correctly.
 
-```{r}
-# this is cool
+```{r policy-check, eval = FALSE}
+# this is cool - Check the policy was added correctly.
 s3$get_bucket_policy(my_bucket_name)
 
 ```
@@ -224,11 +231,10 @@ knitr::include_graphics(image_path_private)
 
 
 # Provide temporary access to an object
-Because we granted ourselves (airvine in this case) access to the private directory, we can create a `Presigned URL` to 
-provide temporary access to the private image. We will set the maximum of 7 days for the URL to be valid. That means that
-on `r format((lubridate::now() + lubridate::days(7)), "%Y-%m-%d %H:%M")` the URL will no longer work and the image below 
-will not appear.
-
+Because we granted ourselves access to the private directory and our `IAM` roles have the correct privileges, we can
+create a `Presigned URL` to provide temporary access to the private image. We will set the maximum of 7 days for the URL
+to be valid. That means that at `r format((lubridate::now() + lubridate::days(7)), "%Y-%m-%d %H:%M")` the URL will no
+longer work and the image below will no longer render in this post!
 
 
 ```{r img-private-purl, eval=TRUE}
