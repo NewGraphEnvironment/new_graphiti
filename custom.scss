@@ -1,6 +1,19 @@
 /*-- scss:defaults --*/
 // Base document colors
 $code-color: #F30CAD;
+// make background slightly more transparent
+$body-bg: lighten(#1a0933, 0%) !default;
+
+
 
 // Code blocks
 $code-block-bg-alpha: -.8;
+
+$code-bg: #000000 !default;
+
+
+// Custom SCSS for more specific targeting - #8ff7ad is a light green
+pre {
+  color: #8ff7ad  !important; // Change to white or near white
+}
+
