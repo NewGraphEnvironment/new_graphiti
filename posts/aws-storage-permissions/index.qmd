@@ -3,7 +3,7 @@ title: "Setting aws bucket permissions with R"
 author: "al"
 date: "2024-05-24"
 date-modified: "`r format(Sys.time(), '%Y-%m-%d')`"
-categories: [news, assets, aws, s3, r, paws]
+categories: [news, aws, s3, R, paws]
 image: "image.jpg"
 params:
   repo_owner: "NewGraphEnvironment"
@@ -14,10 +14,12 @@ format:
 ---
 
 Here we will set up an s3 bucket with a policy that allows the public to read from the bucket, but not from a specific
-directory, and allows a particular `aws_account_id` to write to the bucket. Although we are stoked on the `s3fs` package
-for working with s3 buckets, we will use the `paws` package more than perhaps necessary here - only to learn about how
-it all works. Seems like `s3fs` is the way to go for common moves but `paws` is the "mom" providing the structure and
-guidance to that package.
+directory, and allows a particular `aws_account_id` `root` user as well as a defined `user` to write to the bucket.
+
+
+Although we are stoked on the `s3fs` package for working with s3 buckets, we will use the `paws` package more than
+perhaps necessary here - only to learn about how it all works. Seems like `s3fs` is the way to go for common moves but
+`paws` is the "mom" providing the structure and guidance to that package.
 
 ```{r}
 library(paws)
@@ -38,12 +40,15 @@ s3$list_buckets()
 
 Let's create a bucket called the same name as this repository.
 
-```{r}
+```{r bucket-name}
 my_bucket_name <- basename(here::here()) |> 
   stringr::str_replace_all("_", "-") 
 
 bucket_path <- s3fs::s3_path(my_bucket_name)
+```
 
+
+```{r bucket-create}
 s3$create_bucket(Bucket = my_bucket_name,
   CreateBucketConfiguration = list(
     LocationConstraint = Sys.getenv("AWS_DEFAULT_REGION")
@@ -55,7 +60,7 @@ s3$create_bucket(Bucket = my_bucket_name,
 
 1.  **Important** - First we need to allow "new public policies" to be added to the bucket.
 
-```{r}
+```{r policy-delete}
 s3$delete_public_access_block(
   Bucket = my_bucket_name
 )
@@ -67,7 +72,7 @@ Plus + it allows you to provide `Presigned URLs` so we can provide temporary acc
 change the overall bucket or object permissions. 
 
 
-```{r}
+```{r policy-fuction}
 # https://docs.aws.amazon.com/AmazonS3/latest/userguide/example-walkthroughs-managing-access-example1.html
 #https://chatgpt.com/share/16106509-a34d-4f69-bf95-cd5eb2649707
 aws_policy_write <- function(bucket_name, 
@@ -104,6 +109,7 @@ aws_policy_write <- function(bucket_name,
         Action = c("s3:DeleteObject", "s3:PutObject"),
         Resource = paste0("arn:aws:s3:::", bucket_name, "/*")
       )
+      #going to leave this here for now
       # list(
       #   Effect = "Allow",
       #   Principal = list(AWS = paste0("arn:aws:iam::", aws_account_id, ":user/", user_access_permission)),
@@ -254,7 +260,9 @@ In order to rerun our post we need to delete the bucket. When we do rerun - we u
 ```{r bucket-delete, eval=FALSE}
 # Dont delete the bucket or the post wont render! ha
 # Burn down the bucket 🔥.  If we try to use `s3$delete_bucket(Bucket = my_bucket_name)` we will get an error because the 
-# bucket is not empty. `s3fs::s3_bucket_delete(bucket_path)` works fine though.
+# bucket is not empty. 
+
+#`s3fs::s3_bucket_delete(bucket_path)` works fine though.
 s3fs::s3_bucket_delete(bucket_path)
 
 ```
