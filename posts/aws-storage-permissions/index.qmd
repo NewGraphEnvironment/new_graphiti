@@ -68,8 +68,17 @@ change the overall bucket or object permissions.
 
 
 ```{r}
-aws_policy_write <- function(bucket_name, bucket_dir_private, aws_account_id, write_json = FALSE, dir_output = "policy", file_name = "policy.json") {
+# https://docs.aws.amazon.com/AmazonS3/latest/userguide/example-walkthroughs-managing-access-example1.html
+#https://chatgpt.com/share/16106509-a34d-4f69-bf95-cd5eb2649707
+aws_policy_write <- function(bucket_name, 
+                             bucket_dir_private, 
+                             aws_account_id, 
+                             user_access_permission, 
+                             write_json = FALSE, 
+                             dir_output = "policy", 
+                             file_name = "policy.json") {
   policy <- list(
+    Version = "2012-10-17",
     Statement = list(
       list(
         Effect = "Allow",
@@ -82,9 +91,10 @@ aws_policy_write <- function(bucket_name, bucket_dir_private, aws_account_id, wr
         Principal = "*",
         Action = "s3:GetObject",
         Resource = paste0("arn:aws:s3:::", bucket_name, "/", bucket_dir_private, "/*"),
+        # IMPORTANT - Denies everyone from getting objects from the private directory except for user_access_permission
         Condition = list(
           StringNotEquals = list(
-            "aws:UserAgent" = c("S3Console", "paws-storage")
+            "aws:PrincipalArn" = paste0("arn:aws:iam::", aws_account_id, ":user/", user_access_permission)
           )
         )
       ),
@@ -94,20 +104,33 @@ aws_policy_write <- function(bucket_name, bucket_dir_private, aws_account_id, wr
         Action = c("s3:DeleteObject", "s3:PutObject"),
         Resource = paste0("arn:aws:s3:::", bucket_name, "/*")
       )
+      # list(
+      #   Effect = "Allow",
+      #   Principal = list(AWS = paste0("arn:aws:iam::", aws_account_id, ":user/", user_access_permission)),
+      #   Action = c("s3:GetBucketLocation", "s3:ListBucket"),
+      #   Resource = paste0("arn:aws:s3:::", bucket_name)
+      # ),
+      # list(
+      #   Effect = "Allow",
+      #   Principal = list(AWS = paste0("arn:aws:iam::", aws_account_id, ":user/", user_access_permission)),
+      #   Action = "s3:GetObject",
+      #   Resource = paste0("arn:aws:s3:::", bucket_name, "/*")
+      # )
     )
   )
   
   json_policy <- jsonlite::toJSON(policy, pretty = TRUE, auto_unbox = TRUE)
   
   if (write_json) {
-  dir.create(dir_output, showWarnings = FALSE)
-  output_path <- file.path(dir_output, file_name)
-  write(json_policy, file = output_path)
+    dir.create(dir_output, showWarnings = FALSE)
+    output_path <- file.path(dir_output, file_name)
+    write(json_policy, file = output_path)
     message("Policy written to ", output_path)
-  }else{
+  } else {
     return(json_policy)
   }
 }
+
 
 ```
 
@@ -115,8 +138,9 @@ Now we can write the policy to the bucket.
 
 ```{r}
 my_policy <- aws_policy_write(bucket_name = my_bucket_name, 
-                         bucket_dir_private = "private", 
+                         bucket_dir_private = "private",
                          aws_account_id = Sys.getenv("AWS_ACCOUNT_ID"),
+                         user_access_permission = "airvine",
                          write_json = FALSE
                          )
 
@@ -186,33 +210,51 @@ Good to go.
 
 And now access the private image.
 
-```{r}
+```{r img-private}
 knitr::include_graphics(image_path_private)
 ```
 
-💣 Jackpot! We have the image in the bucket but can't access them from the post.
+💣 Jackpot! We have the image in the "private" bucket so can't access them from the post without permission.
 
- 
-
-
-```{r eval=FALSE}
 
 # Provide temporary access to an object
-# Can't get this to work yet so will come back to it.
+Because we granted ourselves (airvine in this case) access to the private directory, we can create a `Presigned URL` to 
+provide temporary access to the private image. We will set the maximum of 7 days for the URL to be valid. That means that
+on `r format((lubridate::now() + lubridate::days(7)), "%Y-%m-%d %H:%M")` the URL will no longer work and the image below 
+will not appear.
+
+
+
+```{r img-private-purl, eval=TRUE}
+
 knitr::include_graphics(
   s3fs::s3_file_url(
-    paste0(bucket_path, "/private", "/image.jpg")
+    s3_dir_ls(paste0(bucket_path, "/private")),
+    604800,
+    "get_object"
   )
 )
+
 ```
 
+```{r cmd-signed-url, eval=FALSE}
+# this is the cmd line way
+url_file_share <- s3_dir_ls(paste0(bucket_path, "/private"))
+command <- "aws"
+args <- c('s3', 'presign', url_file_share, '--expires-in', '604800')
 
+working_directory = here::here() #we could just remove from funciton to get the current wd but its nice to have so we leave
+
+# loaded this function from the other file. should put in functions file or package
+sys_call()
+```
+
+In order to rerun our post we need to delete the bucket. When we do rerun - we use the `s3fs` package to do it
 
 ```{r bucket-delete, eval=FALSE}
-# Delete the bucket
+# Dont delete the bucket or the post wont render! ha
 # Burn down the bucket 🔥.  If we try to use `s3$delete_bucket(Bucket = my_bucket_name)` we will get an error because the 
 # bucket is not empty. `s3fs::s3_bucket_delete(bucket_path)` works fine though.
-
 s3fs::s3_bucket_delete(bucket_path)
 
 ```
