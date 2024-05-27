@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/2024-05-27-references-bib-succinct/index.html",
       "/posts/aws-storage-permissions/index.html",
       "/posts/aws-storage-processx/index.html",
       "/posts/snakecase/index.html",

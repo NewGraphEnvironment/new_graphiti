@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="al">
-<meta name="dcterms.date" content="2024-05-07">
+<meta name="dcterms.date" content="2024-05-27">
 
-<title>nevermind - Lower snake_case vs Everything_Else</title>
+<title>nevermind - Cleaning up bib files flexibly with Zotero and R</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -144,10 +144,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">snake_case vs Everything_Else</h1>
+      <h1 class="title">Cleaning up bib files flexibly with Zotero and R</h1>
                                 <div class="quarto-categories">
-                <div class="quarto-category">names</div>
                 <div class="quarto-category">news</div>
+                <div class="quarto-category">bibtex</div>
+                <div class="quarto-category">R</div>
+                <div class="quarto-category">citations</div>
               </div>
                   </div>
   </div>
@@ -165,10 +167,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">May 7, 2024</p>
+        <p class="date">May 27, 2024</p>
       </div>
     </div>
     
+      <div>
+      <div class="quarto-title-meta-heading">Modified</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date-modified">May 27, 2024</p>
+      </div>
+    </div>
       
     </div>
     
@@ -184,66 +192,177 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 
+<p>Here we will clean up a bib file exported from <code>Zotero</code> using <code>R</code> to contain only the entries found in a <code>Rmarkdown</code> file.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span>opts_chunk<span class="sc">$</span><span class="fu">set</span>(<span class="at">echo=</span><span class="cn">TRUE</span>, <span class="at">message=</span><span class="cn">FALSE</span>, <span class="at">warning=</span><span class="cn">FALSE</span>, <span class="at">dpi=</span><span class="dv">60</span>, <span class="at">out.width =</span> <span class="st">"100%"</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">scipen=</span><span class="dv">999</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">knitr.kable.NA =</span> <span class="st">'--'</span>) <span class="co">#'--'</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">knitr.kable.NAN =</span> <span class="st">'--'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(here)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>here() starts at /Users/airvine/Projects/repo/new_graphiti</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># get the name of this post directory</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>post_dir <span class="ot">&lt;-</span> <span class="fu">paste0</span>(here<span class="sc">::</span><span class="fu">here</span>(), <span class="st">"/posts/"</span>, params<span class="sc">$</span>post_dir_name)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>post_dir_fig <span class="ot">&lt;-</span> <span class="fu">paste0</span>(post_dir, <span class="st">"/fig/"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>Been preferring <code>snakecase</code> naming convention for all files and columns and variables for a long time for the following reasons:</p>
+<p>Let’s define our <code>.bib</code> files</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>rmd_file <span class="ot">&lt;-</span> <span class="st">"~/Projects/repo/fish_passage_peace_2023_reporting/fish_passage_peace_2023_reporting.Rmd"</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>bib_file <span class="ot">&lt;-</span> <span class="fu">paste0</span>(here<span class="sc">::</span><span class="fu">here</span>(), <span class="st">"/assets/NewGraphEnvironment.bib"</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>output_file <span class="ot">&lt;-</span> <span class="st">"~/Projects/repo/fish_passage_peace_2023_reporting/references.bib"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Here are the functions:</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Function to extract citations from an RMarkdown file</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>bib_extract_citations <span class="ot">&lt;-</span> <span class="cf">function</span>(rmd_file, <span class="at">additional_citations =</span> <span class="fu">c</span>()) {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Read the entire RMarkdown file</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  lines <span class="ot">&lt;-</span> <span class="fu">readLines</span>(rmd_file)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Concatenate all lines into a single string</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  text <span class="ot">&lt;-</span> <span class="fu">paste</span>(lines, <span class="at">collapse =</span> <span class="st">" "</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Regular expression to find citations in the form of @this_citation or [@that_citation; @another_citation]</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  citation_pattern <span class="ot">&lt;-</span> <span class="st">"@[a-zA-Z0-9_:-]+"</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Extract all citations</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  citations <span class="ot">&lt;-</span> <span class="fu">str_extract_all</span>(text, citation_pattern)[[<span class="dv">1</span>]]</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Remove the leading '@' from the citations</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  citations <span class="ot">&lt;-</span> <span class="fu">unique</span>(<span class="fu">sub</span>(<span class="st">"^@"</span>, <span class="st">""</span>, citations))</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Combine with additional citations</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>  all_citations <span class="ot">&lt;-</span> <span class="fu">unique</span>(<span class="fu">c</span>(citations, additional_citations))</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(all_citations)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Function to clean a BibTeX file to keep only cited entries</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>bib_clean <span class="ot">&lt;-</span> <span class="cf">function</span>(bib_file, citations, output_file) {</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.create</span>(output_file)</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Read the entire BibTeX file</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>  lines <span class="ot">&lt;-</span> <span class="fu">readLines</span>(bib_file)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Initialize variables</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>  keep_entry <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>  cleaned_lines <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (line <span class="cf">in</span> lines) {</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check if the line starts a new citation entry</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">grepl</span>(<span class="st">"^@"</span>, line)) {</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Extract the citation key</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>      citation_key <span class="ot">&lt;-</span> <span class="fu">sub</span>(<span class="st">"^@.*</span><span class="sc">\\</span><span class="st">{([^,]+),.*"</span>, <span class="st">"</span><span class="sc">\\</span><span class="st">1"</span>, line)</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Determine if the entry should be kept</span></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>      keep_entry <span class="ot">&lt;-</span> citation_key <span class="sc">%in%</span> citations</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add the line to cleaned_lines if the entry is to be kept</span></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (keep_entry) {</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>      cleaned_lines <span class="ot">&lt;-</span> <span class="fu">c</span>(cleaned_lines, line)</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Write the cleaned lines to the output file</span></span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">writeLines</span>(cleaned_lines, output_file)</span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Cleaned BibTeX file created:"</span>, output_file, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
 <ol type="1">
-<li>It’s much easier to type. Reaching for the shift button is a pain.</li>
-<li>Arguably easier to read. I find it easier to read <code>snake_case</code> than <code>CamelCase</code>.</li>
-<li>Can make it easy to <code>name</code> things in a fashion that allows you to dissect, what, something, is by the way it is named and allows automatic sorting to group similar things together. This presentation by <a href="https://github.com/jennybc">Jenny Bryan</a> is a good read - <a href="https://speakerdeck.com/jennybc/how-to-name-files-the-sequel">https://speakerdeck.com/jennybc/how-to-name-files-the-sequel</a>.</li>
+<li>Export our entire library from <code>Zotero</code> to a bib file in the <code>assets</code> directory of this repo. We don’t even change the name of the file.</li>
 </ol>
+<p>As a big part of the motivation to do this is to reduce the bloat in our repositories we will add the default name of the bib file to the <code>.gitignore</code> of this repo.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="st">"thumbnail.jpg"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="fu">paste0</span>(post_dir_fig, <span class="st">"Screen Shot 2024-05-27 at 1.40.44 PM.png"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div id="fig-snake_vs_camel" class="quarto-figure quarto-figure-center quarto-float anchored" width="100%">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-snake_vs_camel-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="thumbnail.jpg" id="fig-snake_vs_camel" class="img-fluid figure-img" style="width:100.0%">
+<div>
+<figure class="figure">
+<p><img src="fig/Screen Shot 2024-05-27 at 1.40.44 PM.png" class="img-fluid figure-img" width="840"></p>
+</figure>
 </div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-snake_vs_camel-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;1
-</figcaption>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="fu">paste0</span>(post_dir_fig, <span class="st">"Screen Shot 2024-05-27 at 1.40.55 PM.png"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="fig/Screen Shot 2024-05-27 at 1.40.55 PM.png" class="img-fluid figure-img" width="840"></p>
 </figure>
 </div>
 </div>
 </div>
-<p>Worth noting that <code>sometimes-rules-need-to-be-broken</code> sometimes such as when you are naming chunks in <code>Rmarkdown</code>. It breaks our <code>cross-references</code>.</p>
-<p><br></p>
-<p>As we see here though - it doesn’t matter in <code>Quarto</code> (ex. see <a href="#fig-snake_vs_camel" class="quarto-xref">Figure&nbsp;1</a>) vs <a href="#fig-all" class="quarto-xref">Figure&nbsp;2</a>).</p>
+<section id="write-a-cleaned-up-.bib-file" class="level1">
+<h1>Write a Cleaned up <code>.bib</code> file</h1>
+<p>We scan a <code>.Rmd</code> file for all the references cited within it. For bookdown projects we use an amalgamated file created during the build. To be able to access it after the build is complete we need to turn on in the <code>_bookdown.yml</code> file by setting the <code>delete_merged_file: false</code> option. This will create a file named whatever is entered in the <code>book_filename:</code> field in that same <code>_bookdown.yml</code>.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="st">"all.jpeg"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="fu">paste0</span>(post_dir_fig, <span class="st">"Screen Shot 2024-05-27 at 1.52.16 PM.png"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div id="fig-all" class="quarto-figure quarto-figure-center quarto-float anchored" width="100%">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-all-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="all.jpeg" id="fig-all" class="img-fluid figure-img" style="width:100.0%">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-all-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;2
-</figcaption>
+<div>
+<figure class="figure">
+<p><img src="fig/Screen Shot 2024-05-27 at 1.52.16 PM.png" class="img-fluid figure-img" width="840"></p>
 </figure>
 </div>
 </div>
 </div>
-<blockquote class="blockquote">
-<p>“no names have an anonymous function”.</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;-<a href="https://github.com/mdsumner">Michael Sumner</a></p>
-</blockquote>
+<p>One more step:</p>
+<p>The <code>bibtex</code> referenced extracted from our “mom” <code>.bib</code> file (ie. NewGraphEnvironment.bib) would not include references included in the <code>nocite</code> entry of the <code>index.Rmd</code> file unless we specifically include them in the function as <code>additional_citations</code> - so we need to remember to do that. Let’s add one for the sake of demonstration.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>nocites <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"busch_etal2013LandscapeLevelModel"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="extract-citations-from-the-rmarkdown-file" class="level2">
+<h2 class="anchored" data-anchor-id="extract-citations-from-the-rmarkdown-file">Extract citations from the RMarkdown file</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract citations from the RMarkdown file</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>citations <span class="ot">&lt;-</span> <span class="fu">bib_extract_citations</span>(rmd_file, <span class="at">additional_citations =</span> nocites)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="clean-the-bibtex-file-to-keep-only-cited-entries" class="level2">
+<h2 class="anchored" data-anchor-id="clean-the-bibtex-file-to-keep-only-cited-entries">Clean the BibTeX file to keep only cited entries</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bib_clean</span>(bib_file, citations, output_file)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Cleaned BibTeX file created: ~/Projects/repo/fish_passage_peace_2023_reporting/references.bib </code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="gotchas" class="level1">
+<h1>Gotchas</h1>
+<ol type="1">
+<li>This will not include references included in the <code>nocite</code> entry of the <code>index.Rmd</code> file unless we specifcally include them in the function as <code>additional_citations</code> so we need to remember to do that.</li>
+</ol>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">

@@ -146,10 +146,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div class="quarto-title column-body">
       <h1 class="title">Setting aws bucket permissions with R</h1>
                                 <div class="quarto-categories">
-                <div class="quarto-category">news</div>
                 <div class="quarto-category">aws</div>
                 <div class="quarto-category">s3</div>
-                <div class="quarto-category">R</div>
+                <div class="quarto-category">r</div>
                 <div class="quarto-category">paws</div>
               </div>
                   </div>
@@ -175,7 +174,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div>
       <div class="quarto-title-meta-heading">Modified</div>
       <div class="quarto-title-meta-contents">
-        <p class="date-modified">May 25, 2024</p>
+        <p class="date-modified">May 27, 2024</p>
       </div>
     </div>
       
@@ -389,7 +388,7 @@ $Owner$ID
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_file_copy</span>(</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">path =</span> <span class="fu">paste0</span>(here<span class="sc">::</span><span class="fu">here</span>(), <span class="st">"/posts/aws-storage-permissions/image.jpg"</span>),</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">path =</span> <span class="fu">paste0</span>(here<span class="sc">::</span><span class="fu">here</span>(), <span class="st">"/posts/"</span>, params<span class="sc">$</span>post_dir_name, <span class="st">"/image.jpg"</span>),</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  bucket_path</span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
@@ -411,7 +410,7 @@ $Owner$ID
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_file_copy</span>(</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">path =</span> <span class="fu">paste0</span>(here<span class="sc">::</span><span class="fu">here</span>(), <span class="st">"/posts/aws-storage-permissions/image.jpg"</span>),</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">path =</span> <span class="fu">paste0</span>(here<span class="sc">::</span><span class="fu">here</span>(), <span class="st">"/posts/"</span>, params<span class="sc">$</span>post_dir_name, <span class="st">"/image.jpg"</span>),</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">paste0</span>(bucket_path, <span class="st">"/private"</span>)</span>
 <span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
@@ -465,7 +464,7 @@ $Owner$ID
 </section>
 <section id="provide-temporary-access-to-an-object" class="level1">
 <h1>Provide temporary access to an object</h1>
-<p>Because we granted ourselves access to the private directory and our <code>IAM</code> roles have the correct privileges, we can create a <code>Presigned URL</code> to provide temporary access to the private image. We will set the maximum of 7 days for the URL to be valid. That means that at 2024-06-01 02:43 the URL will no longer work and the image below will no longer render in this post!</p>
+<p>Because we granted ourselves access to the private directory and our <code>IAM</code> roles have the correct privileges, we can create a <code>Presigned URL</code> to provide temporary access to the private image. We will set the maximum of 7 days for the URL to be valid. That means that at 2024-06-03 14:48 the URL will no longer work and the image below will no longer render in this post!</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -480,7 +479,7 @@ $Owner$ID
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="https://new-graphiti.s3.us-west-2.amazonaws.com/private/image.jpg?AWSAccessKeyId=AKIAWA3MYTHSXCSVLM5N&amp;Expires=1717235001&amp;Signature=eKPwXECfPU9BB%2F99pA56%2B6juVWc%3D" class="img-fluid figure-img"></p>
+<p><img src="https://new-graphiti.s3.us-west-2.amazonaws.com/private/image.jpg?AWSAccessKeyId=AKIAWA3MYTHSXCSVLM5N&amp;Expires=1717451313&amp;Signature=n7uP96XF%2FJG7NXfhPF3UpUxc%2FJE%3D" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
