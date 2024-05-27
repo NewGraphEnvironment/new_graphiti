@@ -1,12 +1,12 @@
 ---
-title: "snake_case vs Everything_Else"
+title: "Lower snake_case vs Everything_Else"
 author: "al"
 date: "2024-05-07"
 date_modified: "`r format(Sys.time(), '%Y-%m-%d')`"
 format: 
   html:
     code-fold: true
-categories: [names, news]
+categories: [names]
 ---
 
 ```{r setup, echo=TRUE, include = TRUE}
@@ -17,7 +17,7 @@ options(knitr.kable.NAN = '--')
 ```
 
 
-Been preferring `snakecase` naming convention for all files and columns and variables for a long time for the following reasons:
+Been preferring `lower_snakecase` naming convention for all files and columns and variables for a long time for the following reasons:
 
 1.  It's much easier to type. Reaching for the shift button is a pain.
 2.  Arguably easier to read. I find it easier to read `snake_case` than `CamelCase`.
@@ -28,7 +28,7 @@ Been preferring `snakecase` naming convention for all files and columns and vari
 knitr::include_graphics("thumbnail.jpg")
 ```
 
-Worth noting that `sometimes-rules-need-to-be-broken` sometimes such as when you are naming chunks in `Rmarkdown`. It breaks our `cross-references`.  
+Worth noting that `sometimes-rules-need-to-be-broken` sometimes such as when you are naming chunks in `Rmarkdown`. It breaks our `cross-references`.  Also of note is `aws` bucket nameing conventions which don't allow them...
 
 <br>
 

@@ -3,7 +3,7 @@ title: "Setting aws bucket permissions with R"
 author: "al"
 date: "2024-05-24"
 date-modified: "`r format(Sys.time(), '%Y-%m-%d')`"
-categories: [news, aws, s3, R, paws]
+categories: [aws, s3, r, paws]
 image: "image.jpg"
 params:
   repo_owner: "NewGraphEnvironment"

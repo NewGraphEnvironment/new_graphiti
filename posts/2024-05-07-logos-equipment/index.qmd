@@ -3,7 +3,7 @@ title: "Logos and Equipment List Somewhere Accessible"
 author: "al"
 date: "2024-05-07"
 date-modified: "`r format(Sys.time(), '%Y-%m-%d')`"
-categories: [news, assets]
+categories: [assets]
 image: "image.jpg"
 params:
   repo_owner: "NewGraphEnvironment"

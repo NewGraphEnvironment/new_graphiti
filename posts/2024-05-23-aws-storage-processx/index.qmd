@@ -3,7 +3,7 @@ title: "Syncing files to aws with R"
 author: "al"
 date: "2024-05-23"
 date-modified: "`r format(Sys.time(), '%Y-%m-%d')`"
-categories: [news, assets, aws, s3, r, paws]
+categories: [aws, s3, r, paws, processx]
 image: "image.jpg"
 params:
   repo_owner: "NewGraphEnvironment"
