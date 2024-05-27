@@ -8,6 +8,7 @@ image: "image.jpg"
 params:
   repo_owner: "NewGraphEnvironment"
   repo_name: "new_graphiti"
+  post_dir_name: "aws-storage-permissions"
 format: 
   html:
     code-fold: true
@@ -178,7 +179,7 @@ First we add a photo to the main bucket. Going to use `s3fs` for this since I ha
 
 ```{r}
 s3fs::s3_file_copy(
-  path = paste0(here::here(), "/posts/aws-storage-permissions/image.jpg"),
+  path = paste0(here::here(), "/posts/", params$post_dir_name, "/image.jpg"),
   bucket_path
 )
 ```
@@ -193,7 +194,7 @@ s3fs::s3_dir_create(
 
 
 s3fs::s3_file_copy(
-  path = paste0(here::here(), "/posts/aws-storage-permissions/image.jpg"),
+  path = paste0(here::here(), "/posts/", params$post_dir_name, "/image.jpg"),
   paste0(bucket_path, "/private")
 )
 
