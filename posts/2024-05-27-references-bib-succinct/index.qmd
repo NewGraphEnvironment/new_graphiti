@@ -1,0 +1,146 @@
+---
+title: "Cleaning up bib files flexibly with Zotero and R"
+author: "al"
+date: "2024-05-27"
+date-modified: "`r format(Sys.time(), '%Y-%m-%d')`"
+categories: [news, bibtex, R, citations]
+image: "image.jpg"
+params:
+  repo_owner: "NewGraphEnvironment"
+  repo_name: "new_graphiti"
+  post_dir_name: "2024-05-27-references-bib-succinct"
+format: 
+  html:
+    code-fold: true
+---
+
+Here we will clean up a bib file exported from `Zotero` using `R` to contain only the entries found in a `Rmarkdown` file.
+
+```{r}
+library(here)
+library(stringr)
+library(knitr)
+
+# get the name of this post directory
+post_dir <- paste0(here::here(), "/posts/", params$post_dir_name)
+post_dir_fig <- paste0(post_dir, "/fig/")
+```
+
+
+Let's define our `.bib` files
+```{r}
+rmd_file <- "~/Projects/repo/fish_passage_peace_2023_reporting/fish_passage_peace_2023_reporting.Rmd"
+bib_file <- paste0(here::here(), "/assets/NewGraphEnvironment.bib")
+output_file <- "~/Projects/repo/fish_passage_peace_2023_reporting/references.bib"
+```
+
+
+Here are the functions:
+```{r}
+# Function to extract citations from an RMarkdown file
+bib_extract_citations <- function(rmd_file, additional_citations = c()) {
+  # Read the entire RMarkdown file
+  lines <- readLines(rmd_file)
+  
+  # Concatenate all lines into a single string
+  text <- paste(lines, collapse = " ")
+  
+  # Regular expression to find citations in the form of @this_citation or [@that_citation; @another_citation]
+  citation_pattern <- "@[a-zA-Z0-9_:-]+"
+  
+  # Extract all citations
+  citations <- str_extract_all(text, citation_pattern)[[1]]
+  
+  # Remove the leading '@' from the citations
+  citations <- unique(sub("^@", "", citations))
+  
+  # Combine with additional citations
+  all_citations <- unique(c(citations, additional_citations))
+  
+  return(all_citations)
+}
+
+# Function to clean a BibTeX file to keep only cited entries
+bib_clean <- function(bib_file, citations, output_file) {
+  file.create(output_file)
+  # Read the entire BibTeX file
+  lines <- readLines(bib_file)
+  
+  # Initialize variables
+  keep_entry <- FALSE
+  cleaned_lines <- c()
+  
+  for (line in lines) {
+    # Check if the line starts a new citation entry
+    if (grepl("^@", line)) {
+      # Extract the citation key
+      citation_key <- sub("^@.*\\{([^,]+),.*", "\\1", line)
+      
+      # Determine if the entry should be kept
+      keep_entry <- citation_key %in% citations
+    }
+    
+    # Add the line to cleaned_lines if the entry is to be kept
+    if (keep_entry) {
+      cleaned_lines <- c(cleaned_lines, line)
+    }
+  }
+  
+  # Write the cleaned lines to the output file
+  writeLines(cleaned_lines, output_file)
+  
+  cat("Cleaned BibTeX file created:", output_file, "\n")
+}
+
+```
+
+
+1. Export our entire library from `Zotero` to a bib file in the `assets` directory of this repo. We don't even change the name of the file.  
+
+As a big part of the motivation to do this is to reduce the bloat in our repositories we will add the default
+name of the bib file to the `.gitignore` of this repo.
+
+```{r}
+knitr::include_graphics(paste0(post_dir_fig, "Screen Shot 2024-05-27 at 1.40.44 PM.png"))
+knitr::include_graphics(paste0(post_dir_fig, "Screen Shot 2024-05-27 at 1.40.55 PM.png"))
+```
+
+
+
+# Write a Cleaned up `.bib` file
+
+We scan a `.Rmd` file for all the references cited within it.  For bookdown projects we use an amalgamated file created during the build.  To be able to access it after the build is complete we need to turn on in the `_bookdown.yml` file by setting the `delete_merged_file: false` option.  This will create a file named whatever is entered in the `book_filename: ` field in that same `_bookdown.yml`.   
+
+```{r}
+knitr::include_graphics(paste0(post_dir_fig, "Screen Shot 2024-05-27 at 1.52.16 PM.png"))
+```
+
+
+
+One more step:
+
+The `bibtex` referenced extracted from our "mom" `.bib` file (ie. `r basename(bib_file)`) would not include references included in the `nocite` entry of the `index.Rmd` file unless we specifically include them in the function as `additional_citations` - so we need to remember to do that. Let's add one for the sake of demonstration.
+
+```{r}
+nocites <- c("busch_etal2013LandscapeLevelModel")
+```
+
+## Extract citations from the RMarkdown file
+```{r}
+# Extract citations from the RMarkdown file
+citations <- bib_extract_citations(rmd_file, additional_citations = nocites)
+
+```
+
+
+## Clean the BibTeX file to keep only cited entries
+```{r}
+bib_clean(bib_file, citations, output_file)
+```
+
+
+# Gotchas
+1. This will not include references included in the `nocite` entry of the `index.Rmd` file unless we specifcally include
+them in the function as `additional_citations` so we need to remember to do that.
+
+
