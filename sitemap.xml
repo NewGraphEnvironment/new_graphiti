@@ -1,31 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/aws-storage-permissions/index.html</loc>
-    <lastmod>2024-05-27T21:49:54.906Z</lastmod>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/about.html</loc>
+    <lastmod>2024-06-20T01:27:48.302Z</lastmod>
   </url>
   <url>
-    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/logos-equipment/index.html</loc>
-    <lastmod>2024-05-27T21:49:54.906Z</lastmod>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/2024-06-19-precipitation/index.html</loc>
+    <lastmod>2024-06-20T01:27:48.326Z</lastmod>
   </url>
   <url>
     <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/snakecase/index.html</loc>
-    <lastmod>2024-05-27T21:49:54.910Z</lastmod>
-  </url>
-  <url>
-    <loc>https://NewGraphEnvironment.github.io/new_graphiti/about.html</loc>
-    <lastmod>2024-05-27T21:49:54.878Z</lastmod>
-  </url>
-  <url>
-    <loc>https://NewGraphEnvironment.github.io/new_graphiti/index.html</loc>
-    <lastmod>2024-05-27T21:49:54.898Z</lastmod>
-  </url>
-  <url>
-    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/aws-storage-processx/index.html</loc>
-    <lastmod>2024-05-27T21:49:54.906Z</lastmod>
+    <lastmod>2024-06-20T01:27:48.326Z</lastmod>
   </url>
   <url>
     <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/2024-05-27-references-bib-succinct/index.html</loc>
-    <lastmod>2024-05-27T21:49:54.906Z</lastmod>
+    <lastmod>2024-06-20T01:27:48.326Z</lastmod>
+  </url>
+  <url>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/aws-storage-permissions/index.html</loc>
+    <lastmod>2024-06-20T01:27:48.326Z</lastmod>
+  </url>
+  <url>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/logos-equipment/index.html</loc>
+    <lastmod>2024-06-20T01:27:48.326Z</lastmod>
+  </url>
+  <url>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/aws-storage-processx/index.html</loc>
+    <lastmod>2024-06-20T01:27:48.326Z</lastmod>
+  </url>
+  <url>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/index.html</loc>
+    <lastmod>2024-06-20T01:27:48.314Z</lastmod>
   </url>
 </urlset>
