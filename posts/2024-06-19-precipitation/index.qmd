@@ -1,0 +1,468 @@
+---
+title: "Mapping and Plotting Precipitation with R"
+author: "al"
+date: "2024-06-19"
+date-modified: "`r format(Sys.time(), '%Y-%m-%d')`"
+categories: [precipitation, R, drought, rayshader]
+image: "image.jpg"
+params:
+  repo_owner: "NewGraphEnvironment"
+  repo_name: "new_graphiti"
+  post_dir_name: "2024-06-19-precipitation"
+  update_pkgs: FALSE
+  update_gis: FALSE
+execute:
+  warning: false
+format: 
+  html:
+    code-fold: true
+---
+
+**WARNING** - this work is stolen!! I have adapted this from a repository on GitHub from the wonderfully talented
+[Milos Agathon](https://github.com/milos-agathon/precipitation-maps).  All credit to Milos! What a boss - really awesome stuff.
+Also of note is the image used for the blog.  That is Cotey Gallagher... I hope she doesn't sue me. https://www.linkedin.com/pulse/how-crazy-would-could-really-rain-cats-dogs-cotey-gallagher/
+
+<br>
+
+Really interested in quantifying weather data for specific areas that we are working.... Here is a first start.
+
+<br>
+
+First thing we will do is load our packages.  If you do not have the packages installed yet you can change the `update_pkgs` param in
+the `yml` of this file to `TRUE`.  Using `pak` is great because it allows you to update your packages when you want to.
+
+```{r ld, message = FALSE}
+pkgs <- c(
+  "here",
+  "fs",
+  "pRecipe",
+  "giscoR",
+  "terra",
+  "tidyverse",
+  "rayshader",
+  "sf",
+  "classInt",
+  "rgl")
+
+if(params$update_pkgs){
+  # install the pkgs
+  lapply(pkgs,
+         pak::pkg_install,
+         ask = FALSE)
+}
+
+# load the pkgs
+invisible(
+  lapply(pkgs,
+       require,
+       character.only = TRUE)
+)
+```
+
+# Define our Area of Interest
+Here we diverge a bit from Milos version as we are going to load a custom area of interest.  We will be connecting to
+our remote database using Poisson Consulting's `fwapgr::fwa_watershed_at_measure` function which leverages the in database
+[`FWA_WatershedAtMeasure`](https://smnorris.github.io/fwapg/04_functions.html#fwa-watershedatmeasure) function from 
+[Simon Norris'](https://github.com/smnorris) wonderful [`fwapg`](https://github.com/smnorris/fwapg)
+package.  We use a `blue line key` and a `downstream route measure` to define our area of interest which is the Neexdzii Kwa 
+(a.k.a Upper Bulkley River) near Houston, British Columbia.
+
+<br>
+
+As per the [Freshwater Atlas of BC](https://catalogue.data.gov.bc.ca/dataset/freshwater-atlas-stream-network/resource/5459c8c7-f95c-42fa-a439-24439c11929d) - the `blue line key` is:
+
+>Uniquely identifies a single flow line such that a main channel and a secondary channel with the same watershed code would have different blue line keys (the Fraser River and all side channels have different blue line keys).
+
+<br>
+
+A `downstream route measure` is:
+
+>	The distance, in meters, along the route from the mouth of the route to the feature. This distance is measured from the mouth of the containing route to the downstream end of the feature.
+
+
+```{r}
+# lets build a custom watersehed just for upstream of the confluence of Neexdzii Kwa and Wetzin Kwa
+# blueline key
+blk <- 360873822
+# downstream route measure
+drm <- 166030.4
+
+aoi <- fwapgr::fwa_watershed_at_measure(blue_line_key = blk, 
+                                        downstream_route_measure = drm) |> 
+  sf::st_transform(4326)
+```
+
+# Retrieve the Precipitation Data
+For this example we will retrieve our preciptiation data from [Multi-Source Weighted-Ensemble Precipitation](https://www.gloh2o.org/mswep/)
+using the `pRecipe` package.  
+
+```{r}
+# let's create our data directory
+
+dir_data <- here::here('posts', params$post_dir_name, "data")
+
+fs::dir_create(dir_data)
+```
+
+To actually download the data we are going to put a chunk option that allows us to just execute the code once and 
+update it with the `update_gis` param in our `yml`. We will use `usethis::use_git_ignore` to add the data to our `.gitignore` file so that we do not commit that insano enourmouse file to our git repository.
+
+
+```{r dl, class.source = "fold-show", eval = params$update_gis}
+pRecipe::download_data(
+    dataset = "mswep",
+    path = dir_data,
+    domain = "raw",
+    timestep = "yearly"
+)
+
+usethis::use_git_ignore(paste0('posts/', params$post_dir_name, "/data/*"))
+```
+
+
+Now we read in our freshly downloaded `.nc` file and clip to our area of interest and transform the data into a dataframe.
+We need to remove the data from 2023 because it is only for January as per the `.nc` filename `r basename(fs::dir_ls(dir_data, pattern = ".nc"))`.
+```{r}
+
+# get the name of the file with a .nc at the end
+nc_file <- fs::dir_ls(dir_data, pattern = ".nc")
+
+# list.files()
+
+mswep_data <- terra::rast(
+  nc_file
+) |>
+terra::crop(
+    aoi
+)
+
+names(mswep_data) <- 1979:2023
+
+mswep_df <- mswep_data |>
+    as.data.frame(xy = TRUE) |>
+    tidyr::pivot_longer(
+        !c("x", "y"),
+        names_to = "year",
+        values_to = "precipitation"
+    ) |> 
+  # 2023 is not complete so we remove it
+    dplyr::filter(year != 2023)
+
+```
+
+# Plot the Precipitation Data by Year
+
+First thing we do here is highjack the plot function from Milos.
+
+```{r}
+theme_for_the_win <- function(){
+    theme_minimal() +
+    theme(
+        axis.line = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        legend.position = "right",
+        legend.title = element_text(
+            size = 11, color = "grey10"
+        ),
+        legend.text = element_text(
+            size = 10, color = "grey10"
+        ),
+        panel.grid.major = element_line(
+            color = NA
+        ),
+        panel.grid.minor = element_line(
+            color = NA
+        ),
+        plot.background = element_rect(
+            fill = NA, color = NA
+        ),
+        legend.background = element_rect(
+            fill = "white", color = NA
+        ),
+        panel.border = element_rect(
+            fill = NA, color = NA
+        ),
+        plot.margin = unit(
+            c(
+                t = 0, r = 0,
+                b = 0, l = 0
+            ), "lines"
+        )
+    )
+}
+
+breaks <- classInt::classIntervals(
+    mswep_df$precipitation,
+    n = 5,
+    style = "equal"
+)$brks
+
+colors <- hcl.colors(
+    n = length(breaks),
+    palette = "Temps",
+    rev = TRUE
+)
+```
+
+
+Now we plot the data by year.
+
+```{r}
+map1 <- ggplot(
+    data = mswep_df
+) +
+geom_raster(
+    aes(
+        x = x,
+        y = y,
+        fill = precipitation
+    )
+) +
+geom_contour(
+    aes(
+       x = x,
+       y = y,
+       z = precipitation
+    ), color = "white" # add this line
+) +
+geom_sf(
+    data = aoi,
+    fill = "transparent",
+    color = "grey10",
+    size = .5
+) +
+scale_fill_gradientn(
+    name = "mm",
+    colors = colors,
+    breaks = breaks,
+    labels = round(breaks, 0), # use round(breaks, 0)
+    limits = c(
+        min(mswep_df$precipitation),
+        max(mswep_df$precipitation)
+    )
+) +
+facet_wrap(~year) +
+guides(
+    fill = guide_colourbar(
+        direction = "vertical",
+        barheight = unit(50, "mm"),
+        barwidth = unit(5, "mm"),
+        title.position = "top",
+        label.position = "right",
+        title.hjust = .5,
+        label.hjust = .5,
+        ncol = 1,
+        byrow = FALSE
+    )
+) +
+theme_for_the_win()
+
+map1
+```
+
+Pretty cool. Interesting to see really wet and dry years in the last 20 years or so such as the wet ones in 2004, 2007, 
+2011 and 2020 and the dry ones in 2000, 2010, 2014, 2021 and 2022.  The contours on the maps are really interesting as
+they show the gradients which generally run west to east - but occasionally run south to north.
+
+# Average Precipitation
+Now we will average all the years together to get an average precipitation map.  
+
+
+```{r map-ave}
+mswep_average_df <- mswep_df |>
+    dplyr::group_by(
+        x, y, .drop = FALSE
+    ) |>
+    dplyr::summarise(
+        precipitation = mean(precipitation)
+    ) |> 
+  dplyr::mutate(year = "average")
+
+
+breaks <- classInt::classIntervals(
+    mswep_average_df$precipitation,
+    n = 5,
+    style = "equal"
+)$brks
+
+
+colors <- hcl.colors(
+    n = length(breaks),
+    palette = "Temps",
+    rev = TRUE
+)
+
+map_average <- ggplot(
+    data = mswep_average_df
+) +
+geom_raster(
+    aes(
+        x = x,
+        y = y,
+        fill = precipitation
+    )
+) +
+geom_contour(
+    aes(
+       x = x,
+       y = y,
+       z = precipitation
+    ), color = "white" # add this line
+) +
+geom_sf(
+    data = aoi,
+    fill = "transparent",
+    color = "grey10",
+    size = .5
+) +
+scale_fill_gradientn(
+    name = "mm",
+    colors = colors,
+    breaks = breaks,
+    labels = round(breaks, 0), # use round(breaks, 0)
+    limits = c(
+        min(mswep_average_df$precipitation),
+        max(mswep_average_df$precipitation)
+    )
+) +
+guides(
+    fill = guide_colourbar(
+        direction = "vertical",
+        barheight = unit(50, "mm"),
+        barwidth = unit(5, "mm"),
+        title.position = "top",
+        label.position = "right",
+        title.hjust = .5,
+        label.hjust = .5,
+        ncol = 1,
+        byrow = FALSE
+    )
+) +
+theme_for_the_win()
+
+map_average
+```
+
+# Compare the Average Precipitation to a Specific Year
+We often talk about a "dry" year or a "wet" year.  Let's compare the average precipitation to a specific year.  We will
+build a little function to do this so that we can easily compare any year to the average.
+
+```{r funct-map-compare}
+map_vs_average <- function(year_compare){
+
+mswep_df_2022 <- mswep_df |>
+      dplyr::filter(year == year_compare) |> 
+      dplyr::mutate(year = as.character(year))
+
+mswep_df_compare <- bind_rows(mswep_average_df, mswep_df_2022)
+
+breaks <- classInt::classIntervals(
+    mswep_df_compare$precipitation,
+    n = 5,
+    style = "equal"
+)$brks
+
+colors <- hcl.colors(
+    n = length(breaks),
+    palette = "Temps",
+    rev = TRUE
+)
+
+ggplot(
+    data = mswep_df_compare
+) +
+  facet_wrap(~year) +
+geom_raster(
+    aes(
+        x = x,
+        y = y,
+        fill = precipitation
+    )
+) +
+geom_contour(
+    aes(
+       x = x,
+       y = y,
+       z = precipitation
+    ), color = "white" # add this line
+) +
+geom_sf(
+    data = aoi,
+    fill = "transparent",
+    color = "grey10",
+    size = .5
+) +
+scale_fill_gradientn(
+    name = "mm",
+    colors = colors,
+    breaks = breaks,
+    labels = round(breaks, 0), # use round(breaks, 0)
+    limits = c(
+        min(mswep_df_compare$precipitation),
+        max(mswep_df_compare$precipitation)
+    )
+) +
+guides(
+    fill = guide_colourbar(
+        direction = "vertical",
+        barheight = unit(50, "mm"),
+        barwidth = unit(5, "mm"),
+        title.position = "top",
+        label.position = "right",
+        title.hjust = .5,
+        label.hjust = .5,
+        ncol = 1,
+        byrow = FALSE
+    )
+) +
+theme_for_the_win()
+}
+
+
+```
+
+First let's check out 2022 as it seemed pretty dry.
+```{r map2022, class.source = "fold-show"}
+map_vs_average(2022)
+```
+
+Now let's look at 2020 as that seemed really we with lots of streams flowing really nicely.
+
+```{r map2020, class.source = "fold-show"}
+map_vs_average(2020)
+```
+
+Definitely wetter than average.
+
+
+
+
+# 3D Contour Map
+Let's make an interactive 3D contour map of the average precipitation data.  Use the mouse to rotate the map and zoom in and out!
+
+```{r rgl, class.source = "fold-show"}
+{
+  
+  rayshader::plot_gg(
+    ggobj = map_average,
+    width = 7,
+    height = 7,
+    scale = 250,
+    solid = FALSE,
+    shadow = TRUE,
+    shadowcolor = "white",
+    shadowwidth = 0,
+    shadow_intensity = 1,
+    # window.size = c(600, 600),
+    zoom = .7,
+    phi = 85
+    # theta = 0
+  )
+  rgl::rglwidget(width = 982, height = 1025, reuse = FALSE)
+}
+```
+
+Thanks Miles!
