@@ -52,8 +52,9 @@ pkgs_cran <- c(
 pkgs_gh <- c(
   "poissonconsulting/pgfeatureserv",
   "poissonconsulting/fwapgr",
-  "NewGraphEnvironment/rfp",
-  "NewGraphEnvironment/fpr"
+  "NewGraphEnvironment/rfp"
+  # we will turn this off since the function it uses won't run for folks without db credentials
+  # "NewGraphEnvironment/fpr"
  )
 
 pkgs <- c(pkgs_cran, pkgs_gh)
@@ -144,7 +145,7 @@ Now we read in our freshly downloaded `.nc` file and clip to our area of interes
     
 ```{r aoi-clip}
 # get the name of the file with a .nc at the end
-nc_file <- fs::dir_ls(dir_data, pattern = ".nc")
+nc_file <- fs::dir_ls(dir_data, glob = "*.nc")
 
 mswep_data <- terra::rast(
   nc_file
@@ -157,7 +158,7 @@ terra::crop(
 Next we extract the years of the data from the filename of the `.nc` file and then transform the data into a dataframe.
 We need to remove the data from 2023 because it is only for January as per the filename: 
 
-    `r basename(fs::dir_ls(dir_data, pattern = ".nc"))`
+    `r basename(nc_file)`
     
 ```{r names-years}
 
@@ -184,7 +185,14 @@ mswep_df <- mswep_data |>
 ```
 
 # Get Additional Data
-We could use some data for context such as major streams, highways and the railway.  Also municipalities would be helpful.
+We could use some data for context such as major streams, highways and the railway.  We get the streams and railway from 
+data distribution bc api using the `bcdata` package.  Our `rfp` package calls just allow some extra sanity checks on the 
+`bcdata::bcdc_query_geodata` function. It's not really necessary but can be helpful when errors occur (ex. the name of 
+the column to filter on is input incorrectly). 
+
+<br>
+
+
 
 ```{r dl-layers, cache = TRUE}
 # grab all the railways
@@ -206,16 +214,41 @@ l_streams <- rfp::rfp_bcd_get_data(
   janitor::clean_names() |> 
   dplyr::filter(stream_order > 4)
 
-# highways
-l_rds <- fpr::fpr_db_query(query = "SELECT transport_line_id, structured_name_1, transport_line_type_code, geom FROM whse_basemapping.transport_line WHERE transport_line_type_code = 'RH1'") |> 
-  sf::st_transform(4326) 
+
 
 ```
+Because the highways we use in our mapping are not available for direct download from the Data Distribution BC api (some
+other versions are [here](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/topographic-data/roads) we
+will query them from our remote database.  The function used (`fpr::fpr_db_query`) is a wrapper around the
+`DBI::dbGetQuery` function that allows us to query our remote database by calling our environmental variables and making
+a connection. This will not work without the proper credentials so if you were trying to reproduce this and don't have
+the credentials you won't be able to retrieve the roads. To get around this we have stored the trimmed roads data in the
+`data` directory of this post so we can read it in from there.
 
+
+```{r dl-roads, eval = FALSE}
+# highways
+# define the type of roads we want to include using the transport_line_type_code. We will include RA1 and RH1 (Road arerial/highway major)
+rd_codes <- c("RA1", "RH1")
+l_rds <- fpr::fpr_db_query(
+  query = glue::glue("SELECT transport_line_id, structured_name_1, transport_line_type_code, geom FROM whse_basemapping.transport_line WHERE transport_line_type_code IN ({glue::glue_collapse(glue::single_quote(rd_codes), sep = ', ')})")
+  )|> 
+  sf::st_transform(4326) 
+
+
+sf::st_intersection(l_rds, 
+                    # we will remove all the aoi columns except the geometry so we don't get all the aoi columns appended
+                    aoi |> dplyr::select(geometry)) |> 
+  sf::st_write(here::here('posts', params$post_dir_name, "data", "l_rds.gpkg"), delete_dsn = TRUE)
+```
 
 Now we trim up all those layers. We have some functions to validate and repair geometries and then we clip them to our area of interest.
 
-```{r}
+```{r clip-layers}
+# we don't actually need to trim the rds since we already did that but for simplicity we will do it again
+  l_rds <- sf::st_read(here::here('posts', params$post_dir_name, "data", "l_rds.gpkg"), quiet = TRUE) 
+
+
 layers_to_trim <- tibble::lst(l_rail, l_streams, l_rds)
 
 # Function to validate and repair geometries
@@ -355,7 +388,8 @@ Pretty cool. Interesting to see really wet and dry years in the last 20 years or
 they show the gradients which generally run west to east - but occasionally run south to north.
 
 # Average Precipitation
-Now we will average all the years together to get an average precipitation map.  We will add our addition layer for context too.
+Now we will average all the years together to get an average precipitation map.  We will add our additional layers for 
+context too. Roads are black, railways are yellow and streams are blue.
 
 
 ```{r map-ave}
@@ -440,7 +474,7 @@ map_average <- ggplot(
   ) +
   geom_sf(
     data = layers_trimmed$l_rail,
-    color = "black",
+    color = "yellow",
     size = .8
   ) +
   theme_for_the_win()
@@ -532,7 +566,7 @@ map_vs_average <- function(year_compare){
     ) +
     geom_sf(
       data = layers_trimmed$l_rail,
-      color = "black",
+      color = "yellow",
       size = .8
     ) +
     theme_for_the_win()
