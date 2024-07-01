@@ -3,7 +3,7 @@ title: "Mapping Land Cover with R"
 author: "al"
 date: "2024-07-01"
 date-modified: "`r format(Sys.time(), '%Y-%m-%d')`"
-categories: [land cover, R, planetary computer, satellite]
+categories: [land cover, R, planetary computer, remote sensing]
 image: "image.jpg"
 params:
   repo_owner: "NewGraphEnvironment"
@@ -18,7 +18,7 @@ format:
     code-fold: true
 ---
 
-We want to quantifying and visualize remotely sense land cover data.... Here is a first start.  We will use the European
+Visualize and quantify remotely sense land cover data.... Here is a first start.  We will use the European
 Space Agency's WorldCover product which provides global land cover maps for the years 2020 and 2021 at 10 meter
 resolution based on the combination of Sentinel-1 radar data and Sentinel-2 imagery.  We will use the 2021 dataset
 for mapping an area of the Skeena watershed near Houston, British Columbia. 
@@ -50,7 +50,10 @@ pkgs_cran <- c(
   "tabulapdf",
   "bcdata",
   "ggplot",
-  "ggdark")
+  "ggdark",
+  "knitr",
+  "DT",
+  "htmlwidgets")
 
 pkgs_gh <- c(
   "poissonconsulting/fwapgr",
@@ -103,7 +106,7 @@ A `downstream route measure` is:
 >	The distance, in meters, along the route from the mouth of the route to the feature. This distance is measured from the mouth of the containing route to the downstream end of the feature.
 
 
-```{r aoi-def}
+```{r aoi-vector}
 # lets build a custom watersehed just for upstream of the confluence of Neexdzii Kwa and Wetzin Kwa
 # blueline key
 blk <- 360873822
@@ -227,7 +230,7 @@ ms_query_signin <- rstac::items_sign(
 To actually download the data we are going to put a chunk option that allows us to just execute the code once and 
 update it with the `update_gis` param in our `yml`. 
 
-```{r aoi-dl, eval = params$update_gis}
+```{r aoi-raster, eval = params$update_gis}
 rstac::assets_download(
     items = ms_query_signin,
     asset_names = "map",
@@ -308,18 +311,18 @@ the column to filter on is input incorrectly).
 ```{r dl-layers, cache = TRUE}
 # grab all the railways
 l_rail <- rfp::rfp_bcd_get_data(
-    bcdata_record_id = stringr::str_to_upper("whse_basemapping.gba_railway_tracks_sp")
+    bcdata_record_id = "whse_basemapping.gba_railway_tracks_sp"
 ) |> 
   sf::st_transform(4326) |> 
   janitor::clean_names() 
 
 # streams in the bulkley and then filter to just keep the big ones
 l_streams <- rfp::rfp_bcd_get_data(
-  bcdata_record_id = stringr::str_to_upper("whse_basemapping.fwa_stream_networks_sp"),
-  col_filter = stringr::str_to_upper("watershed_group_code"),
+  bcdata_record_id = "whse_basemapping.fwa_stream_networks_sp",
+  col_filter = "watershed_group_code",
   col_filter_value = "BULK",
   # grab a smaller object by including less columns
-  col_extract = stringr::str_to_upper(c("linear_feature_id", "stream_order"))
+  col_extract = c("linear_feature_id", "stream_order", "gnis_name", "downstream_route_measure", "blue_line_key", "length_metre")
 ) |> 
   sf::st_transform(4326) |> 
   janitor::clean_names() |> 
@@ -385,30 +388,40 @@ xref_raw2 <- xref_raw |>
   janitor::row_to_names(1) |>
   janitor::clean_names()
 
-xref_raw3 <- xref_raw2 %>%
-  fill(code, .direction = "down")
+xref_raw3 <- xref_raw2 |> 
+  tidyr::fill(code, .direction = "down")
 
 # Custom function to concatenate rows within each group
 collapse_rows <- function(df) {
-  df %>%
-    summarise(across(everything(), ~ paste(na.omit(.), collapse = " ")))
+  df |> 
+    dplyr::summarise(across(everything(), ~ paste(na.omit(.), collapse = " ")))
 }
 
 # Group by code and apply the custom function
-xref <- xref_raw3 %>%
-  group_by(code) %>%
-  group_modify(~ collapse_rows(.x)) %>%
-  ungroup() |> 
+xref <- xref_raw3 |>
+  dplyr::group_by(code) |>
+  dplyr::group_modify(~ collapse_rows(.x)) |>
+  dplyr::ungroup() |> 
+  dplyr::mutate(code = as.numeric(code)) |> 
   dplyr::arrange(code) |> 
   purrr::set_names(c("code", "land_cover_class", "lccs_code", "definition", "color_code")) |> 
-  tidyr::separate(color_code, into = c("r", "g", "b"), sep = ",", convert = TRUE, remove = FALSE) %>%
-  dplyr::mutate(color = rgb(r, g, b, maxColorValue = 255))
+  # now we make a list of the color codes and convert to hex. Even though we don't actually need them here...
+  dplyr::mutate(color_code = purrr::map(color_code, ~ as.numeric(strsplit(.x, ",")[[1]])),
+                color = purrr::map_chr(color_code, ~ rgb(.x[1], .x[2], .x[3], maxColorValue = 255))) |> 
+  dplyr::relocate(definition, .after = last_col())
+
 
 my_dt_table(xref, cols_freeze_left = 0, page_length = 5)
 
 ```
 
-So - looks like when we combined our tiffs together with `terra::mosaic` we lost the color table associated with the SpatRaster object.
+We seem to get issues when the colors we have in our tiff does not match our cross-reference table.  For this reason we will
+remove any values in the `xref` object that are not in the rasters that we are plotting.
+
+
+<br>
+
+Also - looks like when we combined our tiffs together with `terra::mosaic` we lost the color table associated with the SpatRaster object.
 We can recover that table with  `terra::coltab(land_cover_raster_raw[[1]])`
 
 ## Plot 
@@ -420,41 +433,140 @@ color_table <- terra::coltab(land_cover_raster_raw[[1]])[[1]]
 
 coltab(land_cover_raster_resampled) <- color_table
 
+xref_cleaned <- xref |> 
+  filter(code %in% sort(unique(terra::values(land_cover_raster_resampled))))
+
 
 map <- ggplot() +
-    tidyterra::geom_spatraster(
-        data = as.factor(land_cover_raster_resampled),
-        use_coltab = TRUE,
-        maxcell = Inf
-    ) +
-    tidyterra::scale_fill_coltab(
-        data = as.factor(land_cover_raster_resampled),
-        name = "ESA Land Cover",
-        labels = xref$land_cover_class
-    ) +
-    # geom_sf(
-    #     data = aoi,
-    #     fill = "transparent",
-    #     color = "white",
-    #     linewidth = .5
-    # ) +
-    geom_sf(
+  tidyterra::geom_spatraster(
+    data = as.factor(land_cover_raster_resampled),
+    use_coltab = TRUE,
+    maxcell = Inf
+  ) +
+  tidyterra::scale_fill_coltab(
+    data = as.factor(land_cover_raster_resampled),
+    name = "ESA Land Cover",
+    labels = xref_cleaned$land_cover_class
+  ) +
+  # geom_sf(
+  #     data = aoi,
+  #     fill = "transparent",
+  #     color = "white",
+  #     linewidth = .5
+  # ) +
+  geom_sf(
     data = layers_trimmed$l_streams,
     color = "blue",
     size = 1
   ) +
   geom_sf(
     data = layers_trimmed$l_rail,
-    color = "yellow",
+    color = "black",
     size = 1
   ) +
-    ggdark::dark_theme_void()
+  ggdark::dark_theme_void()
 
-
-# save the plot
-# ggsave(here::here('posts', params$post_dir_name, "image.jpg"), width = 10, height = 10)
 
 map
 ```
 
+# Refine the Area of Interest
 
+```{r buffer-define}
+buffer_size <- 250
+length_define <- 10000
+```
+
+
+Nice. So let's say we want to zoom in on a particular area such as the mainstem of the Wetzin Kwa for the lowest
+10km of the stream for a buffered area at approximately `r as.character(buffer_size)`m either side of the stream.  We can do that by getting the name of the stream. The smallest downstream route measure and the first segments that add to `r as.character(length_define)`m in linear length. 
+
+
+```{r zoom-in}
+aoi_neexdzii <- layers_trimmed$l_streams |> 
+  dplyr::filter(gnis_name == "Bulkley River") |> 
+  dplyr::arrange(downstream_route_measure) |> 
+  # calculate when we get to 10000m by adding up the length_metre field and filtering out everything up to 10000m
+  dplyr::filter(cumsum(length_metre) <= length_define) 
+
+aoi_neexdzii_buffered <- sf::st_buffer(aoi_neexdzii, buffer_size, endCapStyle = "FLAT")
+
+```
+
+## Plot Refined Area
+
+Clip the resampled raster to the buffered area.
+
+```{r}
+land_cover_sample <- terra::crop(land_cover_raster_resampled, aoi_neexdzii_buffered, snap = "in", mask = TRUE, extend = TRUE)
+
+```
+
+<br>
+
+So it looks like we lose our color values with the crop.  We  see that with `has.colors(land_cover_sample)`.
+
+```{r colors-check2}
+has.colors(land_cover_sample)
+```
+
+<br>
+
+Let's add them back in with the `terra::coltab` function.
+
+
+```{r colors-add2}
+
+coltab(land_cover_sample) <- color_table
+has.colors(land_cover_sample)
+```
+
+<br>
+
+Now we should be able to plot what we have.  Let's re-trim up our extra data layers and add those in as well.
+```{r plot2}
+
+
+# clip them  with purrr and sf
+layers_trimmed <- purrr::map(
+  layers_to_trim,
+  ~ sf::st_intersection(.x, aoi_neexdzii_buffered)
+) 
+
+xref_cleaned <- xref |> 
+  filter(code %in% sort(unique(terra::values(land_cover_sample))))
+
+map <- ggplot2::ggplot() +
+    tidyterra::geom_spatraster(
+        data = as.factor(land_cover_sample),
+        use_coltab = TRUE,
+        maxcell = Inf
+    ) +
+    tidyterra::scale_fill_coltab(
+        data = as.factor(land_cover_sample),
+        name = "ESA Land Cover",
+        labels = xref_cleaned$land_cover_class
+    ) +
+  geom_sf(
+    data = layers_trimmed$l_rail,
+    color = "black",
+    size = 1
+  ) +
+    geom_sf(
+    data = layers_trimmed$l_streams,
+    color = "blue",
+    size = 1
+  ) +
+    ggdark::dark_theme_void()
+
+# save the plot
+# ggsave(here::here('posts', params$post_dir_name, "image.jpg"), width = 10, height = 10)
+    
+map
+    
+```
+
+<br>
+
+Pretty sweet. Next up is to summarize the land cover classes for different areas to build our understanding of
+potential impacts due to land cover changes.  We will likely use the `terra::zonal` function to do this.  Stay tuned.

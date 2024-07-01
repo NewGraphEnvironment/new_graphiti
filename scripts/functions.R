@@ -1,11 +1,11 @@
 my_dt_table <-   function(dat,
                           cols_freeze_left = 3,
                           page_length = 10,
-                          col_align = 'dt-right',
+                          col_align = 'dt-center', #'dt-right',
                           font_size = '10px',
                           style_input = 'bootstrap'){
 
-  dat %>%
+  dat |>
     DT::datatable(
       style = style_input,
       class = 'cell-border stripe', #'dark' '.table-dark',
@@ -23,6 +23,8 @@ my_dt_table <-   function(dat,
         lengthMenu = list(c(5,10,25,50,-1),
                           c(5,10,25,50,"All")),
         colReorder = TRUE,
+        #https://stackoverflow.com/questions/45508033/adjusting-height-and-width-in-dtdatatable-r-markdown
+        rowCallback = htmlwidgets::JS("function(r,d) {$(r).attr('height', '100px')}"),
         #https://stackoverflow.com/questions/44101055/changing-font-size-in-r-datatables-dt
         initComplete = htmlwidgets::JS(glue::glue(
           "function(settings, json) {{ $(this.api().table().container()).css({{'font-size': '{font_size}'}}); }}"
