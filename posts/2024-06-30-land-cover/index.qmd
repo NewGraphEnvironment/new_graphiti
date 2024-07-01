@@ -1,0 +1,460 @@
+---
+title: "Mapping Land Cover with R"
+author: "al"
+date: "2024-07-01"
+date-modified: "`r format(Sys.time(), '%Y-%m-%d')`"
+categories: [land cover, R, planetary computer, satellite]
+image: "image.jpg"
+params:
+  repo_owner: "NewGraphEnvironment"
+  repo_name: "new_graphiti"
+  post_dir_name: "2024-06-30-land-cover"
+  update_pkgs: FALSE
+  update_gis: FALSE
+execute:
+  warning: false
+format: 
+  html:
+    code-fold: true
+---
+
+We want to quantifying and visualize remotely sense land cover data.... Here is a first start.  We will use the European
+Space Agency's WorldCover product which provides global land cover maps for the years 2020 and 2021 at 10 meter
+resolution based on the combination of Sentinel-1 radar data and Sentinel-2 imagery.  We will use the 2021 dataset
+for mapping an area of the Skeena watershed near Houston, British Columbia. 
+
+<br>
+
+
+This post was inspired - with much of the code copied - from a repository on GitHub from the wonderfully talented
+[Milos Popovic](https://github.com/milos-agathon/esa-land-cover).  
+
+<br>
+
+First thing we will do is load our packages.  If you do not have the packages installed yet you can change the `update_pkgs` param in
+the `yml` of this file to `TRUE`.  Using `pak` is great because it allows you to update your packages when you want to.
+
+```{r ld-pkgs, message = FALSE}
+pkgs_cran <- c(
+  "usethis",
+  "rstac",
+  "here",
+  "fs",
+  "terra",
+  "tidyverse",
+  "rayshader",
+  "sf",
+  "classInt",
+  "rgl",
+  "tidyterra",
+  "tabulapdf",
+  "bcdata",
+  "ggplot",
+  "ggdark")
+
+pkgs_gh <- c(
+  "poissonconsulting/fwapgr",
+  "NewGraphEnvironment/rfp"
+ )
+
+pkgs <- c(pkgs_cran, pkgs_gh)
+
+if(params$update_pkgs){
+  # install the pkgs
+  lapply(pkgs,
+         pak::pkg_install,
+         ask = FALSE)
+}
+
+# load the pkgs
+pkgs_ld <- c(pkgs_cran,
+             basename(pkgs_gh))
+invisible(
+  lapply(pkgs_ld,
+       require,
+       character.only = TRUE)
+)
+
+source(here::here("scripts/functions.R"))
+```
+
+# Define our Area of Interest
+Here we diverge a bit from Milos version as we are going to load a custom area of interest.  We will be connecting to
+our remote database using Poisson Consulting's `fwapgr::fwa_watershed_at_measure` function which leverages the in database
+[`FWA_WatershedAtMeasure`](https://smnorris.github.io/fwapg/04_functions.html#fwa-watershedatmeasure) function from 
+[Simon Norris'](https://github.com/smnorris) wonderful [`fwapg`](https://github.com/smnorris/fwapg)
+package.  
+
+<br>
+
+We use a `blue line key` and a `downstream route measure` to define our area of interest which is the Neexdzii Kwa 
+(a.k.a Upper Bulkley River) near Houston, British Columbia.
+
+<br>
+
+As per the [Freshwater Atlas of BC](https://catalogue.data.gov.bc.ca/dataset/freshwater-atlas-stream-network/resource/5459c8c7-f95c-42fa-a439-24439c11929d) - the `blue line key`:
+
+> Uniquely identifies a single flow line such that a main channel and a secondary channel with the same watershed code would have different blue line keys (the Fraser River and all side channels have different blue line keys).
+
+<br>
+
+A `downstream route measure` is:
+
+>	The distance, in meters, along the route from the mouth of the route to the feature. This distance is measured from the mouth of the containing route to the downstream end of the feature.
+
+
+```{r aoi-def}
+# lets build a custom watersehed just for upstream of the confluence of Neexdzii Kwa and Wetzin Kwa
+# blueline key
+blk <- 360873822
+# downstream route measure
+drm <- 166030.4
+
+aoi <- fwapgr::fwa_watershed_at_measure(blue_line_key = blk, 
+                                        downstream_route_measure = drm) |> 
+  sf::st_transform(4326)
+
+#get the bounding box of our aoi
+aoi_bb <- sf::st_bbox(aoi)
+```
+
+# Retrieve the Land Cover Data
+For this example we will retrieve our precipitation data from Microsofts Planetary Computer.  We will use `usethis::use_git_ignore` to add the data to our `.gitignore` file so that we do not commit that insano enormous tiff files to our git repository.
+
+    usethis::use_git_ignore(paste0('posts/', params$post_dir_name, "/data/**/*.tif"))
+    
+```{r dir-create}
+# let's create our data directory
+dir_data <- here::here('posts', params$post_dir_name, "data")
+
+fs::dir_create(dir_data)
+
+# usethis::use_git_ignore(paste0('posts/', params$post_dir_name, "/data/**/*.tif"))
+
+```
+
+
+
+```{r get-collections}
+ms_query <- rstac::stac("https://planetarycomputer.microsoft.com/api/stac/v1")
+
+ms_collections <- ms_query |>
+    rstac::collections() |>
+    rstac::get_request()
+
+```
+
+Now - we want to understand these datasets a bit better so let's make a little function to view the options for datasets 
+we can download.
+
+```{r view-collections}
+# Function to extract required fields
+# Function to extract required fields
+extract_fields <- function(x) {
+  tibble(
+    id = x$id,
+    title = x$title,
+    time_start = x[["cube:dimensions"]][["time"]][["extent"]][1],
+    time_end = x[["cube:dimensions"]][["time"]][["extent"]][2],
+    description = x$description
+  )
+}
+
+# Apply the function to each element in ms_collections$collections and combine into a dataframe
+df <- purrr::map_dfr(ms_collections$collections, extract_fields)
+
+my_dt_table(df, cols_freeze_left = 0, page_length = 5)
+```
+
+
+<br>
+
+Here is the description of our dataset:
+
+
+    The European Space Agency (ESA) [WorldCover](https://esa-worldcover.org/en) product provides global land cover maps
+    for the years 2020 and 2021 at 10 meter resolution based on the combination of
+    [Sentinel-1](https://sentinel.esa.int/web/sentinel/missions/sentinel-1) radar data and
+    [Sentinel-2](https://sentinel.esa.int/web/sentinel/missions/sentinel-2) imagery. The discrete classification maps
+    provide 11 classes defined using the Land Cover Classification System (LCCS) developed by the United Nations (UN)
+    Food and Agriculture Organization (FAO). The map images are stored in [cloud-optimized
+    GeoTIFF](https://www.cogeo.org/) format. The WorldCover product is developed by a consortium of European service
+    providers and research organizations. [VITO](https://remotesensing.vito.be/) (Belgium) is the prime contractor of
+    the WorldCover consortium together with [Brockmann Consult](https://www.brockmann-consult.de/) (Germany), 
+    [CSSI](https://www.c-s.fr/) (France), [Gamma Remote Sensing AG](https://www.gamma-rs.ch/) (Switzerland), [International
+    Institute for Applied Systems Analysis](https://www.iiasa.ac.at/) (Austria), and [Wageningen
+    University](https://www.wur.nl/nl/Wageningen-University.htm) (The Netherlands). Two versions of the WorldCover
+    product are available: - WorldCover 2020 produced using v100 of the algorithm   - [WorldCover 2020 v100 User
+    Manual](https://esa-worldcover.s3.eu-central-1.amazonaws.com/v100/2020/docs/WorldCover_PUM_V1.0.pdf)   - [WorldCover
+    2020 v100 Validation
+    Report](<https://esa-worldcover.s3.eu-central-1.amazonaws.com/v100/2020/docs/WorldCover_PVR_V1.1.pdf>) - WorldCover
+    2021 produced using v200 of the algorithm   - [WorldCover 2021 v200 User
+    Manual](<https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/docs/WorldCover_PUM_V2.0.pdf>)   -
+    [WorldCover 2021 v200 Validaton
+    Report](<https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/docs/WorldCover_PVR_V2.0.pdf>) Since the
+    WorldCover maps for 2020 and 2021 were generated with different algorithm versions (v100 and v200, respectively),
+    changes between the maps include both changes in real land cover and changes due to the used algorithms.
+
+
+Here we build the query for what we want.  We are specifying `collect_this <- "esa-worldcover"`.
+
+```{r aoi-dl-query}
+collect_this <- "esa-worldcover"
+
+ms_esa_query <- rstac::stac_search(
+        q = ms_query,
+        collections = collect_this,
+        datetime = "2021-01-01T00:00:00Z/2021-12-31T23:59:59Z",
+        bbox = aoi_bb,
+        limit = 100
+    ) |>
+    rstac::get_request()
+
+ms_esa_query
+```
+Next we need to sign in to the planetary computer with `rstac::sign_planetary_computer()`.
+
+```{r aoi-sign-in, eval = params$update_gis}
+ms_query_signin <- rstac::items_sign(
+        ms_esa_query,
+        rstac::sign_planetary_computer()
+    )
+
+```
+
+<br>
+
+To actually download the data we are going to put a chunk option that allows us to just execute the code once and 
+update it with the `update_gis` param in our `yml`. 
+
+```{r aoi-dl, eval = params$update_gis}
+rstac::assets_download(
+    items = ms_query_signin,
+    asset_names = "map",
+    output_dir = here::here('posts', params$post_dir_name, "data"),
+    overwrite = TRUE
+)
+
+```
+
+<br>
+
+Nice. So now let's read in these data, clip them to our area of interest with `terra::crop` then combine them into one tiff using
+`terra::mosaic`.
+
+```{r rasters-crop-combine}
+
+dir_out <- here::here('posts', params$post_dir_name, "data/esa-worldcover/v200/2021/map")
+
+rast_files <- list.files(
+    dir_out,
+    full.names = TRUE
+)
+
+land_cover_raster_raw <- rast_files |>
+  purrr::map(terra::rast) 
+
+# Clip the rasters to the AOI
+land_cover_raster_clipped <- purrr::map(
+  land_cover_raster_raw,
+  ~ terra::crop(.x, aoi, snap = "in", mask = TRUE)
+)
+
+# combine the rasters
+land_cover_raster <- do.call(terra::mosaic, land_cover_raster_clipped)
+
+# Optionally, plot the merged raster
+# terra::plot(land_cover_raster)
+```
+
+# Digital Elevation Model
+
+Let's grab the digital elevation model using `elevatr::get_elev_raster` so we can downsample the land cover raster to the same resolution as the DEM.
+
+```{r dem}
+dem <- elevatr::get_elev_raster(
+    locations = aoi,
+    z = 11,
+    clip = "bbox"
+) |>
+    terra::rast()
+```
+
+# Resample
+Here we resample the land cover raster to the same resolution as the DEM.
+
+```{r resample}
+land_cover_raster_resampled <- terra::resample(
+    land_cover_raster,
+    dem,
+    method = "near"
+)
+
+# terra::plot(land_cover_raster_resampled)
+
+```
+
+# Plot the Land Cover and DEM
+
+## Get Additional Data
+We could use some data for context such as major streams and the railway.  We get the streams and railway from 
+data distribution bc api using the `bcdata` package.  Our `rfp` package calls just allow some extra sanity checks on the 
+`bcdata::bcdc_query_geodata` function. It's not really necessary but can be helpful when errors occur (ex. the name of 
+the column to filter on is input incorrectly). 
+
+<br>
+
+
+```{r dl-layers, cache = TRUE}
+# grab all the railways
+l_rail <- rfp::rfp_bcd_get_data(
+    bcdata_record_id = stringr::str_to_upper("whse_basemapping.gba_railway_tracks_sp")
+) |> 
+  sf::st_transform(4326) |> 
+  janitor::clean_names() 
+
+# streams in the bulkley and then filter to just keep the big ones
+l_streams <- rfp::rfp_bcd_get_data(
+  bcdata_record_id = stringr::str_to_upper("whse_basemapping.fwa_stream_networks_sp"),
+  col_filter = stringr::str_to_upper("watershed_group_code"),
+  col_filter_value = "BULK",
+  # grab a smaller object by including less columns
+  col_extract = stringr::str_to_upper(c("linear_feature_id", "stream_order"))
+) |> 
+  sf::st_transform(4326) |> 
+  janitor::clean_names() |> 
+  dplyr::filter(stream_order > 4)
+
+```
+
+Now we trim up those layers. We have some functions to validate and repair geometries and then we clip them to our area of interest.
+
+```{r clip-layers}
+layers_to_trim <- tibble::lst(l_rail, l_streams)
+
+# Function to validate and repair geometries
+validate_geometries <- function(layer) {
+  layer <- sf::st_make_valid(layer)
+  layer <- layer[sf::st_is_valid(layer), ]
+  return(layer)
+}
+
+# Apply validation to the AOI and layers
+aoi <- validate_geometries(aoi)
+layers_to_trim <- purrr::map(layers_to_trim, validate_geometries)
+
+# clip them  with purrr and sf
+layers_trimmed <- purrr::map(
+  layers_to_trim,
+  ~ sf::st_intersection(.x, aoi)
+) 
+```
+
+
+## Get Legend Values
+
+So we need to map the values in the raster to the actual land cover classes.  We can do this by extracting the cross
+reference table from the pdf provided in the metatdata of the data.  We will use the `tabulapdf` package to extract the
+table and do some work to collapse it into a cross-referenceing tool we can use for land cover classifications and 
+subsequent color schemes.
+
+
+```{r legend-extract}
+# extract the cross reference table from the pdf
+pdf_file <- "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/docs/WorldCover_PUM_V2.0.pdf"
+page <- 15
+
+# table_map <- tabulapdf::locate_areas(pdf_file, pages = page)
+# table_coords <- list(as.numeric(unlist(table_map[[1]])))
+
+table_coords <- list(c(94.55745,  74.66493, 755.06007, 550.41094))
+
+
+xref_raw <- tabulapdf::extract_tables(
+  pdf_file,
+  pages = page,
+  method = "lattice",
+  area = table_coords,
+  guess = FALSE
+)
+
+# ##this is how we make a clean dataframe
+xref_raw2 <- xref_raw |> 
+  purrr::pluck(1) |>
+  tibble::as_tibble() |>
+  janitor::row_to_names(1) |>
+  janitor::clean_names()
+
+xref_raw3 <- xref_raw2 %>%
+  fill(code, .direction = "down")
+
+# Custom function to concatenate rows within each group
+collapse_rows <- function(df) {
+  df %>%
+    summarise(across(everything(), ~ paste(na.omit(.), collapse = " ")))
+}
+
+# Group by code and apply the custom function
+xref <- xref_raw3 %>%
+  group_by(code) %>%
+  group_modify(~ collapse_rows(.x)) %>%
+  ungroup() |> 
+  dplyr::arrange(code) |> 
+  purrr::set_names(c("code", "land_cover_class", "lccs_code", "definition", "color_code")) |> 
+  tidyr::separate(color_code, into = c("r", "g", "b"), sep = ",", convert = TRUE, remove = FALSE) %>%
+  dplyr::mutate(color = rgb(r, g, b, maxColorValue = 255))
+
+my_dt_table(xref, cols_freeze_left = 0, page_length = 5)
+
+```
+
+So - looks like when we combined our tiffs together with `terra::mosaic` we lost the color table associated with the SpatRaster object.
+We can recover that table with  `terra::coltab(land_cover_raster_raw[[1]])`
+
+## Plot 
+Ok. Let's plot it up.  We will use `ggplot2` and `tidyterra` to plot the land cover raster and then add the streams and railway on top of that.
+
+```{r plot}
+
+color_table <- terra::coltab(land_cover_raster_raw[[1]])[[1]]
+
+coltab(land_cover_raster_resampled) <- color_table
+
+
+map <- ggplot() +
+    tidyterra::geom_spatraster(
+        data = as.factor(land_cover_raster_resampled),
+        use_coltab = TRUE,
+        maxcell = Inf
+    ) +
+    tidyterra::scale_fill_coltab(
+        data = as.factor(land_cover_raster_resampled),
+        name = "ESA Land Cover",
+        labels = xref$land_cover_class
+    ) +
+    # geom_sf(
+    #     data = aoi,
+    #     fill = "transparent",
+    #     color = "white",
+    #     linewidth = .5
+    # ) +
+    geom_sf(
+    data = layers_trimmed$l_streams,
+    color = "blue",
+    size = 1
+  ) +
+  geom_sf(
+    data = layers_trimmed$l_rail,
+    color = "yellow",
+    size = 1
+  ) +
+    ggdark::dark_theme_void()
+
+
+# save the plot
+# ggsave(here::here('posts', params$post_dir_name, "image.jpg"), width = 10, height = 10)
+
+map
+```
+
+
