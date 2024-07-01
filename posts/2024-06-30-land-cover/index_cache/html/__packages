@@ -28,5 +28,8 @@ tidyterra
 tabulapdf
 bcdata
 ggdark
+knitr
+DT
+htmlwidgets
 fwapgr
 rfp

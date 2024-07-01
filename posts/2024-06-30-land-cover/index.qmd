@@ -427,7 +427,7 @@ We can recover that table with  `terra::coltab(land_cover_raster_raw[[1]])`
 ## Plot 
 Ok. Let's plot it up.  We will use `ggplot2` and `tidyterra` to plot the land cover raster and then add the streams and railway on top of that.
 
-```{r plot}
+```{r plot-region}
 
 color_table <- terra::coltab(land_cover_raster_raw[[1]])[[1]]
 
