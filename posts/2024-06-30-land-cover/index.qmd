@@ -154,7 +154,7 @@ we can download.
 # Function to extract required fields
 # Function to extract required fields
 extract_fields <- function(x) {
-  tibble(
+  tibble::tibble(
     id = x$id,
     title = x$title,
     time_start = x[["cube:dimensions"]][["time"]][["extent"]][1],
@@ -166,7 +166,9 @@ extract_fields <- function(x) {
 # Apply the function to each element in ms_collections$collections and combine into a dataframe
 df <- purrr::map_dfr(ms_collections$collections, extract_fields)
 
-my_dt_table(df, cols_freeze_left = 0, page_length = 5)
+my_dt_table(df, 
+            cols_freeze_left = 0, 
+            page_length = 5)
 ```
 
 
@@ -243,7 +245,7 @@ rstac::assets_download(
 <br>
 
 Nice. So now let's read in these data, clip them to our area of interest with `terra::crop` then combine them into one tiff using
-`terra::mosaic`.
+`terra::mosaic`. In order to visualize NA values we can convert them to a mask and plot.
 
 ```{r rasters-crop-combine}
 
@@ -257,6 +259,13 @@ rast_files <- list.files(
 land_cover_raster_raw <- rast_files |>
   purrr::map(terra::rast) 
 
+#testing for NA
+# v1 <- terra::values(land_cover_raster_raw[[1]])
+# v2 <- terra::values(land_cover_raster_raw[[2]])
+# 
+# # contains NA? No!!
+# any(is.na(v1))
+# any(is.na(v2))
 # Clip the rasters to the AOI
 land_cover_raster_clipped <- purrr::map(
   land_cover_raster_raw,
@@ -266,13 +275,56 @@ land_cover_raster_clipped <- purrr::map(
 # combine the rasters
 land_cover_raster <- do.call(terra::mosaic, land_cover_raster_clipped)
 
-# Optionally, plot the merged raster
-# terra::plot(land_cover_raster)
+# in order to visualize NA values we need to convert them to a mask and plot
+na_mask <- is.na(land_cover_raster)
+plot(na_mask, main = "NA Values in the Raster", col = c("white", "red"))
+
 ```
 
-# Digital Elevation Model
+# Resampling with Digital Elevation Model  
 
-Let's grab the digital elevation model using `elevatr::get_elev_raster` so we can downsample the land cover raster to the same resolution as the DEM.
+If we want to we can grab a digital elevation model using [`elevatr::get_elev_raster`](https://github.com/jhollist/elevatr) 
+so we can resample the land cover raster to the same resolution as the DEM.  We could increase the resolution or decrease
+depending on the [zoom level](https://github.com/tilezen/joerd/blob/master/docs/data-sources.md#what-is-the-ground-resolution) we choose.
+
+<br>
+
+The reason we might choose to resample (upsample or downsample) are summarized in the table below. Because the first 
+map we wish to render (the entire Neexdzii Kwah) is quite large we will downsample so that it does not take 20 minutes
+to render the map. We can see the resolution of the original raster with `terra::cellSize(land_cover_raster)`.
+
+```{r tab-resample}
+resampling_table <- tibble::tibble(
+  Feature = c("Definition", "Purpose", "Method", "Effect", "Example"),
+  Upsampling = c(
+    "Increasing spatial resolution",
+    "Match higher-resolution data, enhance detail",
+    "Interpolation (nearest, bilinear, cubic)",
+    "More cells, finer detail",
+    "10m to 5m resolution"
+  ),
+  Downsampling = c(
+    "Decreasing spatial resolution",
+    "Reduce data size, speed up processing",
+    "Aggregation (average, sum, nearest)",
+    "Fewer cells, less detail",
+    "10m to 20m resolution"
+  )
+)
+
+knitr::kable(resampling_table, caption = "Summary of Upsampling and Downsampling")
+```
+
+
+```{r cell-size}
+terra::cellSize(land_cover_raster)
+```
+
+<br>
+
+This translates to cells ~9m high x ~6m wide (~50m2).  For the DEM we chose a zoom level of 11 for the DEM but we can go as 
+high as 14.  Zoom and resolution is related to latitude. For the latitude of our study area (approx 55 degrees) the 
+resolution at zoom level 11 is ~30m high x ~18m wide.  At zoom level 14 it is ~4m high x ~2m wide.
 
 ```{r dem}
 dem <- elevatr::get_elev_raster(
@@ -281,29 +333,36 @@ dem <- elevatr::get_elev_raster(
     clip = "bbox"
 ) |>
     terra::rast()
-```
 
-# Resample
-Here we resample the land cover raster to the same resolution as the DEM.
+
+```
+## Downsample the Land Cover Raster
+Here we downsample the land cover raster to the same resolution as the DEM for the purposes of rendering our map
+of the larger area in a reasonable amount of time.
+
 
 ```{r resample}
+
+# Here we resample the land cover raster to the same resolution as the DEM.
 land_cover_raster_resampled <- terra::resample(
     land_cover_raster,
     dem,
-    method = "near"
+    method = "near",
+    threads = TRUE
 )
 
 # terra::plot(land_cover_raster_resampled)
 
 ```
 
-# Plot the Land Cover and DEM
+# Plot Land Cover for Entire Neexdzii Kwah
 
 ## Get Additional Data
 We could use some data for context such as major streams and the railway.  We get the streams and railway from 
-data distribution bc api using the `bcdata` package.  Our `rfp` package calls just allow some extra sanity checks on the 
-`bcdata::bcdc_query_geodata` function. It's not really necessary but can be helpful when errors occur (ex. the name of 
-the column to filter on is input incorrectly). 
+data distribution bc api using the `bcdata` package.  Our `rfp` package calls just allow some extra sanity checks and 
+convenience moves on the 
+`bcdata::bcdc_query_geodata` function. It's not really necessary but can be helpful (ex. can use small cap layer and 
+column names and will throw an informative error if the name of the columns specified are input incorrectly). 
 
 <br>
 
@@ -473,38 +532,61 @@ map
 # Refine the Area of Interest
 
 ```{r buffer-define}
-buffer_size <- 250
-length_define <- 10000
+buffer <- 250
+length_m <- 10000
 ```
 
 
-Nice. So let's say we want to zoom in on a particular area such as the mainstem of the Wetzin Kwa for the lowest
-10km of the stream for a buffered area at approximately `r as.character(buffer_size)`m either side of the stream.  We can do that by getting the name of the stream. The smallest downstream route measure and the first segments that add to `r as.character(length_define)`m in linear length. 
+Nice. So let's say we want to zoom in on a particular area such as the mainstem of the Neexdzii Kwah for the lowest
+`r as.character(length_m)`m of the stream for a buffered area at approximately `r as.character(buffer)`m either side of the stream.  
+We can do that by filtering by the name of the stream, arranging by downstream route measure and keeping only the first 
+segments that add to less than or equal to `r as.character(length_m)`m in linear length. 
+
+<br>
+
+Not totally sure what to do with the individual stream segments at this point.  For now we merge them together into one 
+and then buffer them.  This reslts in one shape vsa bunch so that buffered segments don't overlap each other.  Interestingly
+we end up with a slightly larger raster when we merge the stream segments together before buffering.  Below are the results:
+
+    dimensions  : 259, 951, 1  multiple stream segments
+    dimensions  : 262, 958, 1  single stream segment 
 
 
-```{r zoom-in}
-aoi_neexdzii <- layers_trimmed$l_streams |> 
+```{r aoi-refine}
+#here we merge our features
+aoi_refined_raw <- layers_trimmed$l_streams |> 
   dplyr::filter(gnis_name == "Bulkley River") |> 
   dplyr::arrange(downstream_route_measure) |> 
-  # calculate when we get to 10000m by adding up the length_metre field and filtering out everything up to 10000m
-  dplyr::filter(cumsum(length_metre) <= length_define) 
+  # calculate when we get to length_m by adding up the length_metre field and filtering out everything up to length_m
+  dplyr::filter(cumsum(length_metre) <= length_m) |> 
+  sf::st_union()
 
-aoi_neexdzii_buffered <- sf::st_buffer(aoi_neexdzii, buffer_size, endCapStyle = "FLAT")
+aoi_refined <- sf::st_sf(aoi_refined_raw)
 
+aoi_refined_buffered <- sf::st_buffer(aoi_refined, buffer, endCapStyle = "FLAT") 
+
+
+sum(sf::st_area(aoi_refined_buffered))
+#7323123 multiple stream segments
+#4310883 single stream segment
 ```
 
 ## Plot Refined Area
 
-Clip the resampled raster to the buffered area.
+First we need to clip the landcover raster to the buffered area. We are not going to use the resampled raster because
+we want a more detailed view of the land cover classes for this much smaller area. The computational time to render
+the plot will be fine at the original resolution.
+
 
 ```{r}
-land_cover_sample <- terra::crop(land_cover_raster_resampled, aoi_neexdzii_buffered, snap = "in", mask = TRUE, extend = TRUE)
-
+land_cover_sample <- terra::crop(land_cover_raster, aoi_refined_buffered, snap = "near", mask = TRUE, extend = TRUE)
+#dimensions  : 259, 951, 1  multiple stream segments
+#dimensions  : 262, 958, 1 single stream segment
 ```
 
 <br>
 
-So it looks like we lose our color values with the crop.  We  see that with `has.colors(land_cover_sample)`.
+We lose our color values with the crop.  We  see that with `has.colors(land_cover_sample)`.
 
 ```{r colors-check2}
 has.colors(land_cover_sample)
@@ -518,46 +600,45 @@ Let's add them back in with the `terra::coltab` function.
 ```{r colors-add2}
 
 coltab(land_cover_sample) <- color_table
-has.colors(land_cover_sample)
 ```
 
 <br>
 
-Now we should be able to plot what we have.  Let's re-trim up our extra data layers and add those in as well.
+Now we should be able to plot what we have.  Let's re-trim up our extra data layers to the refined area of interest and add those in as well.
 ```{r plot2}
 
 
 # clip them  with purrr and sf
 layers_trimmed <- purrr::map(
   layers_to_trim,
-  ~ sf::st_intersection(.x, aoi_neexdzii_buffered)
+  ~ sf::st_intersection(.x, aoi_refined_buffered)
 ) 
 
 xref_cleaned <- xref |> 
-  filter(code %in% sort(unique(terra::values(land_cover_sample))))
+  dplyr::filter(code %in% sort(unique(terra::values(land_cover_sample))))
 
 map <- ggplot2::ggplot() +
-    tidyterra::geom_spatraster(
-        data = as.factor(land_cover_sample),
-        use_coltab = TRUE,
-        maxcell = Inf
-    ) +
-    tidyterra::scale_fill_coltab(
-        data = as.factor(land_cover_sample),
-        name = "ESA Land Cover",
-        labels = xref_cleaned$land_cover_class
-    ) +
-  geom_sf(
+  tidyterra::geom_spatraster(
+    data = as.factor(land_cover_sample),
+    use_coltab = TRUE,
+    maxcell = Inf
+  ) +
+  tidyterra::scale_fill_coltab(
+    data = as.factor(land_cover_sample),
+    name = "ESA Land Cover",
+    labels = xref_cleaned$land_cover_class
+  ) +
+  ggplot2::geom_sf(
     data = layers_trimmed$l_rail,
     color = "black",
     size = 1
   ) +
-    geom_sf(
+  ggplot2::geom_sf(
     data = layers_trimmed$l_streams,
     color = "blue",
     size = 1
   ) +
-    ggdark::dark_theme_void()
+  ggdark::dark_theme_void()
 
 # save the plot
 # ggsave(here::here('posts', params$post_dir_name, "image.jpg"), width = 10, height = 10)
@@ -566,7 +647,110 @@ map
     
 ```
 
-<br>
+# Summary Statistics
 
-Pretty sweet. Next up is to summarize the land cover classes for different areas to build our understanding of
-potential impacts due to land cover changes.  We will likely use the `terra::zonal` function to do this.  Stay tuned.
+Next up is to summarize the land cover classes for different areas to build our understanding of
+potential impacts due to land cover changes.  Let's start with our refined area of interest.
+
+
+## Neexdzii Kwah
+Now lets make a table and a simple bargraph to present the results.
+
+```{r stats}
+
+# Calculate the area of each cell (assuming your raster is in lat/lon coordinates)
+cell_area <- terra::cellSize(land_cover_raster_resampled, unit = "ha")
+
+# Summarize the raster values
+land_cover_summary_raw <- terra::freq(land_cover_raster_resampled, digits = 0) |> 
+  dplyr::mutate(area_ha = round(count * cell_area[1]$area),1) |> 
+  # make a column that is the percentage of the total area
+  dplyr::mutate(percent_area = round((area_ha / sum(area_ha) * 100), 1))
+
+# now we add the xref code and land_cover_class to the summary
+land_cover_summary <- land_cover_summary_raw |> 
+  dplyr::left_join(xref, by = c("value" = "code")) |> 
+  dplyr::select(land_cover_class, area_ha, percent_area) |> 
+  dplyr::arrange(desc(area_ha))
+
+
+```
+
+
+```{r tab-stats}
+my_caption <- "Land Cover Class by Refined Area of Interest"
+
+land_cover_summary |> 
+  knitr::kable(caption = my_caption)
+  
+```
+
+
+```{r plot-stats}
+plot_title <- "Land Cover Class for Area of Interest"
+
+# 
+land_cover_summary |> 
+  # convert land_cover_class to factor and arrange based on the area_ha
+  dplyr::mutate(land_cover_class = forcats::fct_reorder(land_cover_class, area_ha)) |>
+  ggplot2::ggplot(ggplot2::aes(x = land_cover_class, y = area_ha)) +
+  ggplot2::geom_col() +
+  ggplot2::coord_flip() +
+  ggplot2::labs(title= plot_title,
+                x = "Land Cover Class",
+                y = "Area (ha)") +
+  ggplot2::theme_minimal() 
+  # cowplot::theme_minimal_grid()
+```
+
+
+## Refined Area of Interest 
+Now lets make a table and a simple bargraph to present the results.
+
+
+
+```{r stats-refined}
+
+# Calculate the area of each cell (assuming your raster is in lat/lon coordinates)
+cell_area <- terra::cellSize(land_cover_sample, unit = "ha")
+
+# Summarize the raster values
+land_cover_summary_raw <- terra::freq(land_cover_sample, digits = 0) |> 
+  dplyr::mutate(area_ha = round(count * cell_area[1]$area),1) |> 
+  # make a column that is the percentage of the total area
+  dplyr::mutate(percent_area = round((area_ha / sum(area_ha) * 100), 1))
+
+# now we add the xref codde and land_cover_class to the summary
+land_cover_summary <- land_cover_summary_raw |> 
+  dplyr::left_join(xref, by = c("value" = "code")) |> 
+  dplyr::select(land_cover_class, area_ha, percent_area) |> 
+  dplyr::arrange(desc(area_ha))
+
+
+```
+
+```{r tab-stats-refined}}
+my_caption <- "Land Cover Class for Refined Area"
+
+land_cover_summary |> 
+  knitr::kable(caption = my_caption)
+  
+```
+
+
+```{r plot-stats-refined}
+plot_title <- "Land Cover Class for Refined Area"
+
+# 
+land_cover_summary |> 
+  # convert land_cover_class to factor and arrange based on the area_ha
+  dplyr::mutate(land_cover_class = forcats::fct_reorder(land_cover_class, area_ha)) |>
+  ggplot2::ggplot(ggplot2::aes(x = land_cover_class, y = area_ha)) +
+  ggplot2::geom_col() +
+  ggplot2::coord_flip() +
+  ggplot2::labs(title= plot_title,
+                x = "Land Cover Class",
+                y = "Area (ha)") +
+  ggplot2::theme_minimal() 
+```
+
