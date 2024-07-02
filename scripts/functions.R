@@ -2,7 +2,7 @@ my_dt_table <-   function(dat,
                           cols_freeze_left = 3,
                           page_length = 10,
                           col_align = 'dt-center', #'dt-right',
-                          font_size = '10px',
+                          font_size = '11px',
                           style_input = 'bootstrap'){
 
   dat |>
@@ -23,17 +23,17 @@ my_dt_table <-   function(dat,
         lengthMenu = list(c(5,10,25,50,-1),
                           c(5,10,25,50,"All")),
         colReorder = TRUE,
-        #https://stackoverflow.com/questions/45508033/adjusting-height-and-width-in-dtdatatable-r-markdown
-        rowCallback = htmlwidgets::JS("function(r,d) {$(r).attr('height', '100px')}"),
         #https://stackoverflow.com/questions/44101055/changing-font-size-in-r-datatables-dt
         initComplete = htmlwidgets::JS(glue::glue(
           "function(settings, json) {{ $(this.api().table().container()).css({{'font-size': '{font_size}'}}); }}"
         ))
-        #https://github.com/rstudio/DT/issues/1085 - this is not working yet
+        #https://github.com/rstudio/DT/issues/1085 - dark theme not working yet
         #   initComplete = JS(
         #     'function() {$("html").attr("data-bs-theme", "dark");}')
       )
     )
+    # https://stackoverflow.com/questions/42099418/how-can-i-reduce-row-height-in-dt-datatables - cant get
+    # DT::formatStyle(0, target= 'row', lineHeight = row_height_max)
 }
 
 ltab_caption <- function(caption_text = my_caption) {
