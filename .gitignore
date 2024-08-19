@@ -10,4 +10,4 @@ NewGraphEnvironment.bib
 
 posts/2024-06-19-precipitation/data/*.nc
 posts/2024-06-30-land-cover/data/**/*.tif
-testthis
+posts/2024-07-13-tmap-wsg/*
