@@ -63,15 +63,20 @@ purrr::map_chr(buckets$Buckets, "Name")
 ```
 
 
-Now list em with s3fs and show the file structure kid.
 ```{r}
 s3fs::s3_dir_ls(refresh = TRUE) 
 bucket_path <- s3fs::s3_path("23cog")
+
+```
+
+```{r eval= F}
+# too much info
 s3fs::s3_dir_tree(bucket_path)
 ```
 
-List all the darned full paths please
+Now list em with full paths
 ```{r}
+# full paths
 s3_dir_ls(bucket_path)
 ```
 
