@@ -196,7 +196,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div>
       <div class="quarto-title-meta-heading">Modified</div>
       <div class="quarto-title-meta-contents">
-        <p class="date-modified">October 21, 2024</p>
+        <p class="date-modified">September 21, 2024</p>
       </div>
     </div>
       
@@ -263,7 +263,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code>[1] "23cog"        "new-graphiti"</code></pre>
 </div>
 </div>
-<p>Now list em with s3fs and show the file structure kid.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -274,48 +273,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>bucket_path <span class="ot">&lt;-</span> s3fs<span class="sc">::</span><span class="fu">s3_path</span>(<span class="st">"23cog"</span>)</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_dir_tree</span>(bucket_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>bucket_path <span class="ot">&lt;-</span> s3fs<span class="sc">::</span><span class="fu">s3_path</span>(<span class="st">"23cog"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-stdout">
-<pre><code>s3://23cog
-├── .DS_Store
-├── 20210906lampreymoricetribv220230317-DEM.tif
-├── 20210906lampreymoricetribv220230317.las
-├── 20210906lampreymoricetribv220230317.tif
-├── FHAP_template.csv
-├── bc_093l026_xli1m_utm09_2018.tif
-├── bc_093l048_xli1m_utm09_2019.tif
-├── bc_093l056_xli1m_utm09_2019_cog.tif
-├── bc_093l058_xli1m_utm09_2019.tif
-├── bc_093m032_xli1m_utm09_2019_cog2.tif
-├── ept.json
-├── glen_valle_lidar_2019_cog.tif
-├── xli1m_utm09_2019_093L04811.tif
-├── xli1m_utm09_2019_093L04812.tif
-├── xli1m_utm09_2019_093L04813.tif
-├── xli1m_utm09_2019_093L04814.tif
-├── xli1m_utm09_2019_093L04821.tif
-├── xli1m_utm09_2019_093L04822.tif
-├── xli1m_utm09_2019_093L04823.tif
-├── xli1m_utm09_2019_093L04824.tif
-├── xli1m_utm09_2019_093L04831.tif
-├── xli1m_utm09_2019_093L04832.tif
-├── xli1m_utm09_2019_093L04833.tif
-├── xli1m_utm09_2019_093L04834.tif
-├── xli1m_utm09_2019_093L04841.tif
-├── xli1m_utm09_2019_093L04842.tif
-├── xli1m_utm09_2019_093L04843.tif
-├── xli1m_utm09_2019_093L04844.tif
-└── private
-    └── FHAP_template.xlsx</code></pre>
 </div>
-</div>
-<p>List all the darned full paths please</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">s3_dir_ls</span>(bucket_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># too much info</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>s3fs<span class="sc">::</span><span class="fu">s3_dir_tree</span>(bucket_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Now list em with full paths</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># full paths</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">s3_dir_ls</span>(bucket_path)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "s3://23cog/.DS_Store"                                  
@@ -391,12 +364,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<div class="leaflet html-widget html-fill-item" id="htmlwidget-918eae40fe22d1ce18cb" style="width:100%;height:464px;"></div>
-<script type="application/json" data-for="htmlwidget-918eae40fe22d1ce18cb">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addTiles","args":["https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",null,null,{"minZoom":0,"maxZoom":18,"tileSize":256,"subdomains":"abc","errorTileUrl":"","tms":false,"noWrap":false,"zoomOffset":0,"zoomReverse":false,"opacity":1,"zIndex":1,"detectRetina":false,"attribution":"&copy; <a href=\"https://openstreetmap.org/copyright/\">OpenStreetMap<\/a>,  <a href=\"https://opendatacommons.org/licenses/odbl/\">ODbL<\/a>"}]},{"method":"addCOG","args":["https://23cog.s3.amazonaws.com/20210906lampreymoricetribv220230317.tif","COG",null,512,0.8,{"minZoom":0,"maxZoom":18,"tileSize":256,"subdomains":"abc","errorTileUrl":"","tms":false,"noWrap":false,"zoomOffset":0,"zoomReverse":false,"opacity":1,"zIndex":1,"detectRetina":false},null,null,true,false]}]},"evals":[],"jsHooks":[]}</script>
+<div class="leaflet html-widget html-fill-item" id="htmlwidget-50c660fc0a1752b47581" style="width:100%;height:464px;"></div>
+<script type="application/json" data-for="htmlwidget-50c660fc0a1752b47581">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addTiles","args":["https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",null,null,{"minZoom":0,"maxZoom":18,"tileSize":256,"subdomains":"abc","errorTileUrl":"","tms":false,"noWrap":false,"zoomOffset":0,"zoomReverse":false,"opacity":1,"zIndex":1,"detectRetina":false,"attribution":"&copy; <a href=\"https://openstreetmap.org/copyright/\">OpenStreetMap<\/a>,  <a href=\"https://opendatacommons.org/licenses/odbl/\">ODbL<\/a>"}]},{"method":"addCOG","args":["https://23cog.s3.amazonaws.com/20210906lampreymoricetribv220230317.tif","COG",null,512,0.8,{"minZoom":0,"maxZoom":18,"tileSize":256,"subdomains":"abc","errorTileUrl":"","tms":false,"noWrap":false,"zoomOffset":0,"zoomReverse":false,"opacity":1,"zIndex":1,"detectRetina":false},null,null,true,false]}]},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>Dope.</p>
-<p>When we work with the <code>paws</code> package - when we want to get help we use <code>?s3</code> and navigate in from there. This next section doesn’t work yet so we turn eval = F and get on with our lives. Would like to activate this policy from</p>
+<p>When we work with the <code>paws</code> package - when we want to get help we use <code>?s3</code> and navigate in from there. This next section doesn’t work yet so we turn eval = F and get on with our lives. Would like to activate this policy from R but can’t seem to pull it of yet. To be continued - maybe.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
