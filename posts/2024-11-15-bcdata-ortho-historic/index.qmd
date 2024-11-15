@@ -12,21 +12,24 @@ params:
 format: 
   html:
     code-fold: true
-draft: true
 ---
 
 We need some historic ortho photo imagery so that we can have a look at historic watershed conditions compared to current. First thing we're gonna do is generate a area of interest for which we want all of the map sheets ideas for.
 
+```{r setup, include=FALSE}
+# Suppress warnings and messages globally
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
 
 ```{r ld-pkgs}
-library(tidyverse)
+
+suppressMessages(library(tidyverse))
 library(ggplot2)
 library(bcdata)
 library(fwapgr)
-library(sf)
-library(leaflet)
-library(leafem)
-
+suppressMessages(library(sf))
+# library(leaflet)
+# library(leafem)```
 ```
 
 ```{r params}
