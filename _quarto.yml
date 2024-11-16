@@ -11,8 +11,8 @@ website:
 format:
   html:
     theme:
-    - vapor
-    - custom.scss
+    - pulse
+    - custom.css
     css: styles.css
 execute:
   freeze: auto
