@@ -206,10 +206,13 @@ It looks like this.
 ```{r fig1}
 knitr::include_graphics(fs::path(
   path_post,
-  "fig/Screenshot 2024-11-15 at 2.03.42 PM",
+  "fig",
+  "Screenshot1",
   ext = "png"
   )
 )
+
+# knitr::include_graphics("fig/Screenshot 2024-11-15 at 2.03.42 PM.png")
 
 ```
 
@@ -275,7 +278,8 @@ We can use the `downstream_route_measure` of the stream layer to exclude areas u
 ```{r fig2}
 knitr::include_graphics(fs::path(
   path_post,
-  "fig/Screenshot 2024-11-15 at 2.41.57 PM",
+  "fig",
+  "Screenshot2",
   ext = "png"
   )
 )
@@ -361,7 +365,7 @@ photos |>
 ```
 
 
-We can view and download this file [here](https://github.com/NewGraphEnvironment/new_graphiti/tree/main/posts/2024-11-15-bcdata-ortho-historic/exports/airphotos_1968-05-09_1968-07-31.csv)
+We can view and download exported csv file [here](https://github.com/NewGraphEnvironment/new_graphiti/tree/main/posts/2024-11-15-bcdata-ortho-historic/exports/)
 
 ```{r eval = FALSE}
   leaflet::leaflet() |>
