@@ -341,7 +341,7 @@ photos |>
 
 There are `r nrow(photos)` photos. Let's burn out a csv that can be used to find them.
 
-```{r burn1, eval = FALSE}
+```{r burn1, eval = TRUE}
 path_output <- fs::path(
       path_post,
       "exports",
