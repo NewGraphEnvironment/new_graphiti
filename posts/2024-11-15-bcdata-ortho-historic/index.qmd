@@ -2,7 +2,7 @@
 title: "Getting details of historic orthophoto imagery with R"
 author: "al"
 date: "2024-11-15"
-date-modified: "2024-11-16"
+date-modified: "2024-11-17"
 categories: [fwapg, r, bcdata]
 image: "image.jpg"
 params:
@@ -299,8 +299,8 @@ It does however seem that if we go through the online interface, we can use a NT
 
 Next, we go into the provincial [WIMSI](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/digital-imagery/air-photos) service and for each NTS 1:50,000 grid - we state the date range we would like to search and export. Thinking we may be able to hit the API directly with a query in the future which would eliminate the painful point and click portion of this workflow.  For now though - we are doing this piece manually and chose the following options:
 
-  - `Years from`: 1963 to 1980
-  - `Media`: Black and White - Film
+  - `Years from`: 1950 to 2024
+  - `Media`: All
   - `Only show georeferenced images`: - No
 
 Running these options exports a csv for each query.  We saved them in this repo with their original sane names `airphotos.{mapsheet}.csv`.
@@ -557,5 +557,6 @@ We are absolutely privaledged to potentially have the assistance of Mike Price t
 
 ## Outstanding Issues
 
-Why does the date range of the photos we can get IDs for through the [WIMSI](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/digital-imagery/air-photos) online portal not overlap the dates listed in the BC Data Catalouge [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points) for the dates in the Historic Imagery Points that are listed as 1950 - 1963 vs our earliest records from the portal at `r min(photos_aoi_refined$photo_date)`??!!
+  - Why does the date range of the photos we can get IDs for through the [WIMSI](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/digital-imagery/air-photos) online portal not overlap the dates listed in the BC Data Catalouge [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points) for the dates in the Historic Imagery Points that are listed as 1950 - 1963 vs our earliest records from the portal at `r min(photos_aoi_refined$photo_date)`??!!
+  - Is it crazy to export all mapsheets for the area and add Buck Creek to our study area (easy enough to do) or is this a reasonable start and good enough for a start?
 
