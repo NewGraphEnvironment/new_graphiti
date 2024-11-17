@@ -381,13 +381,15 @@ Here are our query parameters to narrow down the area within our selected mapshe
 
   - Buffer: `r q_buffer`m - size of buffer used on either side of stream lines selected
   - Stream segments: 
-    + Bulkley River to the upstream end of Bulkley Lake
+    + Bulkley River (`gnis_name` in the stream layer)
     + Maxan Creek
     + stream segments which begin before `r q_drm_other` from the mainstem
 
-We use the `downstream_route_measure` of the stream layer to exclude areas upstream of Bulkley Lake (also known as Taman Creek).  We find it in QGIS by highlighting the stream layer and clicking on our segment of interest while we have the information tool selected - the resulting pop-up looks like this in QGIS.
 
-```{r fig2}
+
+```{r fig2, eval=FALSE}
+
+# We use the `downstream_route_measure` of the stream layer to exclude areas upstream of Bulkley Lake (also known as Taman Creek).  We find it in QGIS by highlighting the stream layer and clicking on our segment of interest while we have the information tool selected - the resulting pop-up looks like this in QGIS.
 knitr::include_graphics(fs::path(
   path_post,
   "fig",
@@ -401,7 +403,8 @@ knitr::include_graphics(fs::path(
 ```{r aoi-refine}
 
 aoi_refined_raw <- layers_trimmed$l_streams |> 
-  dplyr::filter(gnis_name == "Bulkley River" & downstream_route_measure < q_drm_main |
+  # removed  & downstream_route_measure < q_drm_main for bulkley as doestn't cahnge 1960s query and increases beyond just by 5 photos
+  dplyr::filter(gnis_name == "Bulkley River"|
                   gnis_name != "Bulkley River" & downstream_route_measure < q_drm_other |
                   gnis_name == "Maxan Creek") |> 
   # dplyr::arrange(downstream_route_measure) |>
