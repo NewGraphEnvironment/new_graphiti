@@ -2,19 +2,20 @@
 title: "Getting details of historic orthophoto imagery with R"
 author: "al"
 date: "2024-11-15"
-date-modified: "2024-11-15"
+date-modified: "2024-11-16"
 categories: [fwapg, r, bcdata]
 image: "image.jpg"
 params:
   repo_owner: "NewGraphEnvironment"
   repo_name: "new_graphiti"
   post_name: "2024-11-15-bcdata-ortho-historic"
+  update_gis: FALSE
 format: 
   html:
     code-fold: true
 ---
 
-We need some historic ortho photo imagery so that we can have a look at historic watershed conditions compared to current. First thing we're gonna do is generate a area of interest for which we want all of the map sheets ideas for.
+We would like to obtain historic ortho photo imagery so that we can compare historic watershed conditions compared to current (ex. floodplain vegetation clearing, channel morphology, etc.). First we will generate an area of interest. In our first few code chunks we load our packages and load in some functions that will help us do this work.
 
 ```{r setup, include=FALSE}
 # Suppress warnings and messages globally
@@ -29,11 +30,10 @@ library(bcdata)
 library(fwapgr)
 suppressMessages(library(sf))
 # library(leaflet)
-# library(leafem)```
+# library(leafem)
 ```
 
 ```{r params}
-
 path_post <- fs::path(
   here::here(),
   "posts",
@@ -57,7 +57,7 @@ staticimports::import(
 )
 ```
 
-```{r functions}
+```{r ld-functions}
 source(
   fs::path(
     path_post,
@@ -66,9 +66,43 @@ source(
     ext = "R"
   )
 )
+
+
+lfile_name <- function(dat_name = NULL, ext = "geojson") {
+  fs::path(
+    path_post,
+    "data",
+    paste0(dat_name, ".", ext)
+  )
+}
+
+lburn_sf <- function(dat = NULL, dat_name = NULL) {
+  if (is.null(dat_name)) {
+    cli::cli_abort("You must provide a name for the GeoJSON file using `dat_name`.")
+  }
+  
+  dat |>
+    sf::st_write(
+      lfile_name(dat_name),
+      delete_dsn = TRUE
+      # append = FALSE
+    )
+}
+
+# Function to validate and repair geometries
+lngs_geom_validate <- function(layer) {
+  layer <- sf::st_make_valid(layer)
+  layer <- layer[sf::st_is_valid(layer), ]
+  return(layer)
+}
 ```
 
-```{r}
+
+## Download Data
+Here we download our area of interest which is the Neexdzii Kwah River (a.k.a Upper Bulkley River) which is located between Houston, BC (just south of Smithers) and Topley, BC which is east of Houston and north of Burns Lake, BC.  We hit up our remote database managed by Simon Norris with a package built by Poisson Consulting specifically for the task.  We use the `downstream_route_measure` of the Bulkley River (identified through a unique `blue_line_key`) to query the watershed area upstream of the point where the Neexdzii Kwah River enters the Wedzin Kwah River (a.k.a Morice River).
+
+```{r dl-aoi, eval = params$update_gis}
+
 # lets build a custom watersehed just for upstream of the confluence of Neexdzii Kwa and Wetzin Kwa
 # blueline key
 blk <- 360873822
@@ -79,12 +113,29 @@ aoi <- fwapgr::fwa_watershed_at_measure(blue_line_key = blk,
                                         downstream_route_measure = drm) |> 
   sf::st_transform(4326)
 
+
 #get the bounding box of our aoi
 # aoi_bb <- sf::st_bbox(aoi)
+
+#lets burn this so we don't need to download each time
+aoi <- lngs_geom_validate(aoi)
+lburn_sf(
+  aoi,
+  deparse(substitute(aoi)))
+
 ```
 
+Next we grab a few key layers from the BC Data Catalougue API using convience functions in our `rfp` package ("Reproducable Field Products") which wrap the provincially maintained `bcdata` package.  We grab:
 
-```{r}
+  - Railways
+  - Streams in the Bulkley Watershed group that are 5th order or greater.
+  - [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points)
+  - [Historic Imagery Polygons](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-polygons)
+  - [NTS 1:50,000 Grid](https://catalogue.data.gov.bc.ca/) (we will see why in a second)
+  
+
+
+```{r dl-layers, eval = params$update_gis}
 
 # grab all the railways
 l_rail <- rfp::rfp_bcd_get_data(
@@ -123,45 +174,85 @@ l_imagery_grid <- rfp::rfp_bcd_get_data(
   bcdata_record_id = "WHSE_BASEMAPPING.NTS_50K_GRID") |> 
   sf::st_transform(4326) |> 
   janitor::clean_names()
+
+# burn all these to file so quick to repeat
+
 ```
 
-```{r}
+Following download we run some clean up to ensure the geometry of our spatial files is "valid", trim to our area of interest and burn locally so that every time we rerun iterations of this memo we don't need to wait for the download process which takes a little longer than we want to wait.
+
+```{r burn-layers, eval = params$update_gis}
+
 # get a list of the objects in our env that start with l_
 ls <- ls()[stringr::str_starts(ls(), "l_")] 
 
-layers_to_trim <- tibble::lst(
+layers_all <- tibble::lst(
   !!!mget(ls)
 )
 
-
-# Function to validate and repair geometries
-validate_geometries <- function(layer) {
-  layer <- sf::st_make_valid(layer)
-  layer <- layer[sf::st_is_valid(layer), ]
-  return(layer)
-}
-
 # Apply validation to the AOI and layers
-aoi <- validate_geometries(aoi)
-layers_to_trim <- purrr::map(layers_to_trim, validate_geometries)
+layers_all <- purrr::map(
+  layers_all, 
+  lngs_geom_validate
+  )
 
 # clip them  with purrr and sf
 layers_trimmed <- purrr::map(
-  layers_to_trim,
+  layers_all,
   ~ sf::st_intersection(.x, aoi)
 ) 
+
+# Burn each `sf` object to GeoJSON
+purrr::walk2(
+  layers_trimmed,
+  names(layers_trimmed),
+  lburn_sf
+)
 ```
-OK, so it looks like we cannot get historical air photo information from layers downloaded from BC data catalogue because the majority of the photos are not referenced. It does however seem that if we go through the online interface, we can use a NTS 1 to 50,000 map sheet to export a CSV file that does contain information about individual air photo locations. Our study area is huge so to begin with let's just have a look at the area from Macquarie Creek up to a boat the location of Talley. For this area we just have 21 to 50,000 map sheets. We can visualize which map she's those are by downloading that map sheet layer from BC data catalogue overlay it on our general study area.
+
+Next - we read the layers back in. The download step is skipped now unless we turn it on again by changing the `update_gis` param in our memo `yaml` header to `TRUE`.
+
+```{r ld-layers}
+# now we read in all the sf layers that are local so it is really quick
+layers_to_load <- fs::dir_ls(
+  fs::path(
+    path_post,
+    "data"),
+  glob = "*.geojson"
+)
+
+layers_trimmed <- layers_to_load |>
+  purrr::map(
+    ~ sf::st_read(
+      .x, quiet = TRUE)
+  ) |> 
+  purrr::set_names(
+    nm =tools::file_path_sans_ext(
+      basename(
+        names(
+          layers_to_load
+        )
+      )
+    )
+  )
+```
+
+
+OK, seems we cannot get machine readable historical air photo information from layers downloaded from BC data catalogue - perhpas because the majority of the photos are not georeferenced? What we see in the map under the table below (red dot on map) is one point which contains 8 records including links to pdfs and kmls which are basically a georeferenced drawing of where the imagery overlaps.  From as far as I can tell - if we wanted to try to use these kmls or pdfs to select orthoimagery we would need to manually eyeball where the photo polygons overlap where we want to see imagery for and manually write down identifiers for photo by hand. Maybe I am missing something but it sure seems that way.  This what the information in the [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points) layer looks like.
+
+```{r tab-imagery-points}
+layers_trimmed$l_imagery_hist |> 
+  sf::st_drop_geometry() |> 
+  knitr::kable()
+
+```
+
+
 
 ```{r}
 map <- ggplot() +
-  # tidyterra::geom_spatraster(
-  #   data = as.factor(land_cover_raster_resampled),
-  #   use_coltab = TRUE,
-  #   maxcell = Inf
-  # ) +
   geom_sf(
-      data = aoi,
+      data = layers_trimmed$aoi,
       fill = "transparent",
       color = "black",
       linewidth = .5
@@ -177,10 +268,14 @@ map <- ggplot() +
     size = 1
   ) +
   # geom_sf(
-  #   data = layers_trimmed$l_imagery_hist,
-  #   color = "red",
-  #   size = 1
+  #   data = layers_trimmed$l_imagery,
+  #   alpha = 0,
   # ) +
+  geom_sf(
+    data = layers_trimmed$l_imagery_hist,
+    color = "red",
+    size = 2
+  ) +
   geom_sf(
     data = layers_trimmed$l_imagery_grid,
     alpha = 0.25,
@@ -196,12 +291,19 @@ map <- ggplot() +
 map
 ```
 
+It does however seem that if we go through the online interface, we can use a NTS 1:50,000 map sheet to export a CSV file that does contain information about individual air photo locations (centre coordinate?). Our study area is huge so to begin with we can look at the area from somewhere around the confluence of McQuarie Creek and the Neexdzii Kwah up to say the upstream end of Bulkley Lake. For this area we just have two 1:50,000 map sheets (`093L09` and `093L08`). 
 
-So looks like we have map sheet 093L09 as well as 0 93L08. Next, we're gonna go into the provincial [WIMSI9](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/digital-imagery/air-photos) service and manually select our NTS grids, state the date range we would like to search and export. We chose the following options:
 
-  - Years from: 1963 to 1980
 
-It looks like this.
+## Download Photo Information
+
+Next, we go into the provincial [WIMSIN](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/digital-imagery/air-photos) (getting that abbreviation wrong but it is close and the link works) service and for each NTS 1:50,000 grid - we state the date range we would like to search and export. Thinking we may be able to hit the API directly with a query in the future which would eliminate the painful point and click portion of this workflow.  For now though - we are doing this piece manually and chose the following options:
+
+  - `Years from`: 1963 to 1980
+  - `Media`: Black and White - Film
+  - `Only show georeferenced images`: - No
+
+Running these options exports a csv for each query.  We saved them in this repo with their original sane names `airphotos.{mapsheet}.csv`.
 
 ```{r fig1}
 knitr::include_graphics(fs::path(
@@ -212,15 +314,12 @@ knitr::include_graphics(fs::path(
   )
 )
 
-# knitr::include_graphics("fig/Screenshot 2024-11-15 at 2.03.42 PM.png")
-
 ```
 
-Let's read in what we have, turn into spatial object, trim to overall study area and plot
+At this point we have downloaded two csvs (one for each NTS 1:50,000 mapsheet of course) with information about the airphotos including UTM coordinates that we will assume for now are the photo centres. In our next steps we read in what we have, turn into spatial object, trim to overall study area and plot.
 
-```{r ld2}
+```{r ld-csv}
 # list csvs
-
 ls <- fs::dir_ls(
   fs::path(
     path_post,
@@ -238,7 +337,11 @@ photos_raw <- ls |>
   janitor::clean_names() |> 
   dplyr::mutate(photo_date = lubridate::mdy(photo_date)) 
 
-photos_aoi <- sf::st_intersection(photos_raw, aoi)
+
+photos_aoi <- sf::st_intersection(
+  photos_raw, 
+  layers_trimmed$aoi |> st_make_valid()
+  )
 
 ```
 
@@ -262,18 +365,27 @@ map +
   #   size = 2  # Adjust size of the text labels as needed
   # )
 ```
+
+That is a lot of photos! `r nrow(photos_aoi)` photos to be exact!!!
+
+
 ```{r}
-buffer <- 3000
-drm <- 263795
+q_buffer <- 1000
+q_drm_main <- 263795
+q_drm_other <- 5000
+
 ```
 
+## Clip Photos with Stream Buffers
+Here are our query parameters to narrow down the area within our selected mapsheets in which we want to find photos for:
 
-Ok - so let's say we only want the ones that are within say `r buffer` of either side of the Bulkley River mainstem.
+  - Buffer: `r q_buffer`m - size of buffer used on either side of stream lines selected
+  - Stream segments: 
+    + Bulkley River to the upstream end of Bulkley Lake
+    + Maxan Creek
+    + stream segments which begin before `r q_drm_other` from the mainstem
 
-
-Let's grab just the mainstem segments up to the top end of Bulkley Lake, merge, buffer the stream and clip our airphoto list by that.
-
-We can use the `downstream_route_measure` of the stream layer to exclude areas upstream of Bulkley Lake (also known as Taman Creek).  It looks like this in QGIS
+We use the `downstream_route_measure` of the stream layer to exclude areas upstream of Bulkley Lake (also known as Taman Creek).  We find it in QGIS by highlighting the stream layer and clicking on our segment of interest while we have the information tool selected - the resulting pop-up looks like this in QGIS.
 
 ```{r fig2}
 knitr::include_graphics(fs::path(
@@ -288,95 +400,159 @@ knitr::include_graphics(fs::path(
 
 ```{r aoi-refine}
 
-
 aoi_refined_raw <- layers_trimmed$l_streams |> 
-  dplyr::filter(gnis_name == "Bulkley River" & downstream_route_measure < drm) |> 
+  dplyr::filter(gnis_name == "Bulkley River" & downstream_route_measure < q_drm_main |
+                  gnis_name != "Bulkley River" & downstream_route_measure < q_drm_other |
+                  gnis_name == "Maxan Creek") |> 
   # dplyr::arrange(downstream_route_measure) |>
   # calculate when we get to length_m by adding up the length_metre field and filtering out everything up to length_m
   # dplyr::filter(cumsum(length_metre) <= length_m) |>
-  sf::st_union()
-
-
-aoi_refined_buffered <- sf::st_buffer(
+  sf::st_union() |> 
   # we need to run st_sf or we get a sp object in a list...
-  sf::st_sf(
-    aoi_refined_raw
-  ), 
-  buffer, endCapStyle = "FLAT"
+  sf::st_sf()
+  
+aoi_refined_buffered <- sf::st_buffer(
+  aoi_refined_raw,
+  q_buffer, endCapStyle = "FLAT"
 ) 
 
-photos_aoi_refined <- sf::st_intersection(photos_raw, aoi_refined_buffered)
+photos_aoi_refined <- sf::st_intersection(
+  photos_raw, 
+  aoi_refined_buffered
+  )
 
 ```
 
-ok lets plot again
+Let's plot again and include our buffered areas around the first `r q_drm_other`m of streams (area in red) along with the location of the photo points that land within that area. Looks like this give us `r nrow(photos_aoi_refined)` photos.
 
 ```{r map3}
 map +
+  geom_sf(
+    data = aoi_refined_buffered,
+    color = "red",
+    alpha= 0
+  ) +
   geom_sf(
     data = photos_aoi_refined,
     alpha = 0.25,
   ) 
 ```
-Now lets filter by date to see what we can get for the earliest photos possible.  What is our range:
 
-```{r}
+## Filter Photos by Date
+Now lets filter by date to see what our options are including the earliest photos possible.  Here is our range to choose from:
+
+```{r date-range}
 range(photos_aoi_refined$photo_date)
 ```
+```{r date-param}
+q_date_end1 <- "1969-12-31"
+q_date_start1 <- "1970-01-01"
+q_date_end2 <- "1975-12-31"
 
-What do we have for photos before 1970
+```
+
+There is lots going on here so we will map a comparison of a couple of options. First we will look at all photos available for before 1970 (red dots on map below).  We will also see what photos we have for between `r q_date_start1` and on or before `r q_date_end2` (blue dots on map below)?
+
+```{r photos-filter}
+photos1 <- photos_aoi_refined |> 
+  dplyr::filter(
+      photo_date <= q_date_end1
+  )
+
+photos2 <- photos_aoi_refined |> 
+  dplyr::filter(
+    photo_date >= q_date_start1 &
+      photo_date <= q_date_end2
+  )
+```
+
 
 ```{r map4}
 map +
   geom_sf(
-    data = photos_aoi_refined |> dplyr::filter(photo_date <= "1969-12-31"),
+    data = photos1,
+    color = "red",
+    alpha = 0.25,
+  ) 
+
+map + 
+  geom_sf(
+    data = photos2,
+    color = "blue",
     alpha = 0.25,
   ) 
 ```
-Looks like decent coverage so lets go with that.
+
+Well we have some tough decisions to make as we seem to have better coverage in the Maxan Creek drainage in the 70s (`r nrow(photos2)` photos) but good coverage of the mainstem Neexdzii Kwah in the 60s (`r nrow(photos1)` photos)...
+
+<br>
+
+ 
+The table below can be used to filter photos from any time (provided it's location falls in the mapsheet areas we downloaded info for) and export the result to csv or excel file.  This could be useful for narrowing down our search not only to timescales but also to specific mapsheets with options given for both NTS 1:50,000  as well as BCGS 1:20,000 grid mapsheets.
 
 ```{r tab1}
-photos <- photos_aoi_refined |> 
-  dplyr::filter(photo_date <= "1969-12-31")
-
-photos |> 
+photos_aoi_refined |> 
   my_dt_table(cols_freeze_left = 2)
 ```
 
-There are `r nrow(photos)` photos. Let's burn out a csv that can be used to find them.
+## Burn out Photo Information
+Let's burn out some csvs that can be used to find the imagery for:
+
+  - "before `r q_date_end1`"  
+  - `r q_date_start1` to `r q_date_end2` timeline
 
 ```{r burn1, eval = TRUE}
-path_output <- fs::path(
+lfile_name_photos <- function(dat = NULL){
+  fs::path(
       path_post,
       "exports",
       paste(
         "airphotos",
-        paste(range(photos$photo_date), collapse = "_"),
+        paste(range(dat$photo_date), collapse = "_"),
         sep = "_"
       ),
       ext = "csv"
     )
+}
 
-photos |> 
+# path_output <- fs::path(
+#       path_post,
+#       "exports",
+#       paste(
+#         "airphotos",
+#         paste(range(photos$photo_date), collapse = "_"),
+#         sep = "_"
+#       ),
+#       ext = "csv"
+#     )
+
+photos1 |> 
   readr::write_csv(
-    path_output, na =""
+    lfile_name_photos(photos1), na =""
   )
 
-```
+photos2 |> 
+  readr::write_csv(
+    lfile_name_photos(photos2), na =""
+  )
 
-
-We can view and download exported csv file [here](https://github.com/NewGraphEnvironment/new_graphiti/tree/main/posts/2024-11-15-bcdata-ortho-historic/exports/)
-
-```{r eval = FALSE}
-  leaflet::leaflet() |>
-    leaflet::addTiles() |>
-    leafem:::addCOG(
-      url = url
-      , group = "COG"
-      , resolution = 512
-      , autozoom = TRUE
+lpath_link <- function(dat = NULL){
+  paste0(
+    "https://github.com/NewGraphEnvironment/new_graphiti/tree/main/posts/2024-11-15-bcdata-ortho-historic/exports/",
+    basename(
+      lfile_name_photos(dat)
     )
+  )
+}
+
 ```
 
+We can view and download exported csv files [here](https://github.com/NewGraphEnvironment/new_graphiti/tree/main/posts/2024-11-15-bcdata-ortho-historic/exports/)
 
+## Pick a Horse
+We are absolutely privaledged to potentially have the assistance of Mike Price to help us obtain this imagery from the UBC archives.  Sooo... - unless he has a preference that 100% can override our recommendation - we would think that he would probably prefer clear direction from us.  Soooo - to start - thinking the best plan is to go with the earliest imagery possible and we scan in the "before `r q_date_end1`" timeframe.  The name of the csv with that information is ``r basename(lfile_name_photos(photos1))`` and the file can found along with the other export at the link above or individually [here](`r lpath_link(photos1)`).
+
+## Outstanding Issues
+
+Why does the date range of the photos we can get IDs for through the [WIMSIN](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/digital-imagery/air-photos) online portal not overlap the dates listed in the BC Data Catalouge [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points) for the dates in the Historic Imagery Points that are listed as 1950 - 1963 vs our earliest records from the portal at `r min(photos_aoi_refined$photo_date)`??!!
 
