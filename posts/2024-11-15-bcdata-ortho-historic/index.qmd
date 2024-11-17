@@ -98,7 +98,7 @@ lngs_geom_validate <- function(layer) {
 ```
 
 
-## Download Data
+## Download Spatial Data Layers
 Here we download our area of interest which is the Neexdzii Kwah River (a.k.a Upper Bulkley River) which is located between Houston, BC (just south of Smithers) and Topley, BC which is east of Houston and north of Burns Lake, BC.  We hit up our remote database managed by Simon Norris with a package built by Poisson Consulting specifically for the task.  We use the `downstream_route_measure` of the Bulkley River (identified through a unique `blue_line_key`) to query the watershed area upstream of the point where the Neexdzii Kwah River enters the Wedzin Kwah River (a.k.a Morice River).
 
 ```{r dl-aoi, eval = params$update_gis}
@@ -376,7 +376,7 @@ q_drm_other <- 5000
 
 ```
 
-## Clip Photos with Stream Buffers
+## Clip Photo Information with Streams Buffers
 Here are our query parameters to narrow down the area within our selected mapsheets in which we want to find photos for:
 
   - Buffer: `r q_buffer`m - size of buffer used on either side of stream lines selected
@@ -498,7 +498,7 @@ photos_aoi_refined |>
   my_dt_table(cols_freeze_left = 2)
 ```
 
-## Burn out Photo Information
+## Export `csv` Files with Photo Information
 Let's burn out some csvs that can be used to find the imagery for:
 
   - "before `r q_date_end1`"  
