@@ -297,7 +297,7 @@ It does however seem that if we go through the online interface, we can use a NT
 
 ## Download Photo Information
 
-Next, we go into the provincial [WIMSIN](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/digital-imagery/air-photos) (getting that abbreviation wrong but it is close and the link works) service and for each NTS 1:50,000 grid - we state the date range we would like to search and export. Thinking we may be able to hit the API directly with a query in the future which would eliminate the painful point and click portion of this workflow.  For now though - we are doing this piece manually and chose the following options:
+Next, we go into the provincial [WIMSI](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/digital-imagery/air-photos) service and for each NTS 1:50,000 grid - we state the date range we would like to search and export. Thinking we may be able to hit the API directly with a query in the future which would eliminate the painful point and click portion of this workflow.  For now though - we are doing this piece manually and chose the following options:
 
   - `Years from`: 1963 to 1980
   - `Media`: Black and White - Film
@@ -557,5 +557,5 @@ We are absolutely privaledged to potentially have the assistance of Mike Price t
 
 ## Outstanding Issues
 
-Why does the date range of the photos we can get IDs for through the [WIMSIN](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/digital-imagery/air-photos) online portal not overlap the dates listed in the BC Data Catalouge [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points) for the dates in the Historic Imagery Points that are listed as 1950 - 1963 vs our earliest records from the portal at `r min(photos_aoi_refined$photo_date)`??!!
+Why does the date range of the photos we can get IDs for through the [WIMSI](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/digital-imagery/air-photos) online portal not overlap the dates listed in the BC Data Catalouge [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points) for the dates in the Historic Imagery Points that are listed as 1950 - 1963 vs our earliest records from the portal at `r min(photos_aoi_refined$photo_date)`??!!
 
