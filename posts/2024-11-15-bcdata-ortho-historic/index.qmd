@@ -132,6 +132,7 @@ Next we grab a few key layers from the BC Data Catalougue API using convience fu
   - [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points)
   - [Historic Imagery Polygons](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-polygons)
   - [NTS 1:50,000 Grid](https://catalogue.data.gov.bc.ca/) (we will see why in a second)
+  - [Air Photo Centroids](https://catalogue.data.gov.bc.ca/dataset/airphoto-centroids)
   
 
 
@@ -175,7 +176,7 @@ l_imagery_grid <- rfp::rfp_bcd_get_data(
   sf::st_transform(4326) |> 
   janitor::clean_names()
 
-# burn all these to file so quick to repeat
+
 
 ```
 
@@ -210,6 +211,31 @@ purrr::walk2(
 )
 ```
 
+```{r dl-centroids, eval=params$update_gis}
+# lets use the nts mapsheet to query the photo centroids to avoid a massive file download
+col_value <- layers_trimmed$l_imagery_grid |> 
+  dplyr::pull(map_tile) 
+
+  
+
+l_photo_centroids <- rfp::rfp_bcd_get_data(
+  bcdata_record_id = "WHSE_IMAGERY_AND_BASE_MAPS.AIMG_PHOTO_CENTROIDS_SP",
+  col_filter = "nts_tile",
+  col_filter_value = col_value) |> 
+  sf::st_transform(4326) |> 
+  janitor::clean_names()
+
+# Apply validation to the AOI and layers
+l_photo_centroids <-lngs_geom_validate(l_photo_centroids)
+
+# clip to aoi - can use  layers_trimmed$aoi 
+l_photo_centroids <- sf::st_intersection(l_photo_centroids, aoi)
+
+
+lburn_sf(l_photo_centroids, "l_photo_centroids")
+
+```
+
 Next - we read the layers back in. The download step is skipped now unless we turn it on again by changing the `update_gis` param in our memo `yaml` header to `TRUE`.
 
 ```{r ld-layers}
@@ -237,10 +263,14 @@ layers_trimmed <- layers_to_load |>
   )
 ```
 
+OK, seems we cannot get machine readable historical air photo information from the  downloaded from the BC data catalogue [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points)
+  and [Historic Imagery Polygons](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-polygons) layers perhpas because the majority of the photos are not georeferenced? What we see in the map under the table below (red dot on map) is one point which contains 8 records including links to pdfs and kmls which are basically a georeferenced drawing of where the imagery overlaps.  From as far as I can tell - if we wanted to try to use these kmls or pdfs to select orthoimagery we would need to manually eyeball where the photo polygons overlap where we want to see imagery for and manually write down identifiers for photo by hand. Maybe I am missing something but it sure seems that way.  
+  
+  
+```{r tab-imagery-points, eval=TRUE}
 
-OK, seems we cannot get machine readable historical air photo information from layers downloaded from BC data catalogue - perhpas because the majority of the photos are not georeferenced? What we see in the map under the table below (red dot on map) is one point which contains 8 records including links to pdfs and kmls which are basically a georeferenced drawing of where the imagery overlaps.  From as far as I can tell - if we wanted to try to use these kmls or pdfs to select orthoimagery we would need to manually eyeball where the photo polygons overlap where we want to see imagery for and manually write down identifiers for photo by hand. Maybe I am missing something but it sure seems that way.  This what the information in the [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points) layer looks like.
+#This what the information in the [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points) layer looks like.
 
-```{r tab-imagery-points}
 layers_trimmed$l_imagery_hist |> 
   sf::st_drop_geometry() |> 
   knitr::kable()
@@ -291,21 +321,25 @@ map <- ggplot() +
 map
 ```
 
-It does however seem that if we go through the online interface, we can use a NTS 1:50,000 map sheet to export a CSV file that does contain information about individual air photo locations (centre coordinate?). Our study area is huge so to begin with we can look at the area from somewhere around the confluence of McQuarie Creek and the Neexdzii Kwah up to say the upstream end of Bulkley Lake. For this area we just have two 1:50,000 map sheets (`093L09` and `093L08`). 
+It does however seem that the [Air Photo Centroids](https://catalogue.data.gov.bc.ca/dataset/airphoto-centroids) are georeferenced  
 
 
+```{r}
+#if we go through the online interface, we can use a NTS 1:50,000 map sheet to export a CSV file that does contain information about individual air photo locations (centre coordinate?). Our study area is huge so to begin with we can look at the area from somewhere around the confluence of McQuarie Creek and the Neexdzii Kwah up to say the upstream end of Bulkley Lake. For this area we just have two 1:50,000 map sheets (`093L09` and `093L08`). 
+```
 
-## Download Photo Information
+```{r fig1, eval=FALSE}
 
-Next, we go into the provincial [WIMSI](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/digital-imagery/air-photos) service and for each NTS 1:50,000 grid - we state the date range we would like to search and export. Thinking we may be able to hit the API directly with a query in the future which would eliminate the painful point and click portion of this workflow.  For now though - we are doing this piece manually and chose the following options:
+# ## Download Photo Information
 
-  - `Years from`: 1950 to 2024
-  - `Media`: All
-  - `Only show georeferenced images`: - No
+# Next, we go into the provincial [WIMSI](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/digital-imagery/air-photos) service and for each NTS 1:50,000 grid - we state the date range we would like to search and export. Thinking we may be able to hit the API directly with a query in the future which would eliminate the painful point and click portion of this workflow.  For now though - we are doing this piece manually and chose the following options:
+# 
+#   - `Years from`: 1950 to 2024
+#   - `Media`: All
+#   - `Only show georeferenced images`: - No
+# 
+# Running these options exports a csv for each query.  We saved them in this repo with their original sane names `airphotos.{mapsheet}.csv`.
 
-Running these options exports a csv for each query.  We saved them in this repo with their original sane names `airphotos.{mapsheet}.csv`.
-
-```{r fig1}
 knitr::include_graphics(fs::path(
   path_post,
   "fig",
@@ -316,9 +350,9 @@ knitr::include_graphics(fs::path(
 
 ```
 
-At this point we have downloaded two csvs (one for each NTS 1:50,000 mapsheet of course) with information about the airphotos including UTM coordinates that we will assume for now are the photo centres. In our next steps we read in what we have, turn into spatial object, trim to overall study area and plot.
+```{r ld-csv, eval = FALSE}
 
-```{r ld-csv}
+# At this point we have downloaded two csvs (one for each NTS 1:50,000 mapsheet of course) with information about the airphotos including UTM coordinates that we will assume for now are the photo centres. In our next steps we read in what we have, turn into spatial object, trim to overall study area and plot.
 # list csvs
 ls <- fs::dir_ls(
   fs::path(
@@ -349,8 +383,8 @@ photos_aoi <- sf::st_intersection(
 
 map +
   geom_sf(
-    data = photos_aoi,
-    alpha = 0.25,
+    data = layers_trimmed$l_photo_centroids,
+    alpha = 0.25
   ) 
   # geom_sf_text(
   #   data = photos_aoi,
@@ -366,11 +400,11 @@ map +
   # )
 ```
 
-That is a lot of photos! `r nrow(photos_aoi)` photos to be exact!!!
+That is a lot of photos! `r nrow(layers_trimmed$l_photo_centroids)` photos to be exact!!!
 
 
 ```{r}
-q_buffer <- 1000
+q_buffer <- 500
 q_drm_main <- 263795
 q_drm_other <- 5000
 
@@ -383,6 +417,7 @@ Here are our query parameters to narrow down the area within our selected mapshe
   - Stream segments: 
     + Bulkley River (`gnis_name` in the stream layer)
     + Maxan Creek
+    + Buck Creek
     + stream segments which begin before `r q_drm_other` from the mainstem
 
 
@@ -406,7 +441,7 @@ aoi_refined_raw <- layers_trimmed$l_streams |>
   # removed  & downstream_route_measure < q_drm_main for bulkley as doestn't cahnge 1960s query and increases beyond just by 5 photos
   dplyr::filter(gnis_name == "Bulkley River"|
                   gnis_name != "Bulkley River" & downstream_route_measure < q_drm_other |
-                  gnis_name == "Maxan Creek") |> 
+                  gnis_name %in% c("Maxan Creek", "Buck Creek")) |> 
   # dplyr::arrange(downstream_route_measure) |>
   # calculate when we get to length_m by adding up the length_metre field and filtering out everything up to length_m
   # dplyr::filter(cumsum(length_metre) <= length_m) |>
@@ -420,7 +455,7 @@ aoi_refined_buffered <- sf::st_buffer(
 ) 
 
 photos_aoi_refined <- sf::st_intersection(
-  photos_raw, 
+  layers_trimmed$l_photo_centroids, 
   aoi_refined_buffered
   )
 
@@ -491,7 +526,7 @@ Well we have some tough decisions to make as we seem to have better coverage in 
 <br>
 
  
-The table below can be used to filter photos from any time (provided it's location falls in the mapsheet areas we downloaded info for) and export the result to csv or excel file.  This could be useful for narrowing down our search not only to timescales but also to specific mapsheets with options given for both NTS 1:50,000  as well as BCGS 1:20,000 grid mapsheets.
+The table below can be used to filter photos from any time (provided it's location falls in the watershed area we clipped our downloaded points to) and export the result to csv or excel file.  This could be useful for narrowing down our search not only to timescales but also to specific mapsheets with options given for both NTS 1:50,000  as well as BCGS 1:20,000 grid mapsheets.
 
 ```{r tab1}
 photos_aoi_refined |> 
@@ -553,10 +588,10 @@ lpath_link <- function(dat = NULL){
 We can view and download exported csv files [here](https://github.com/NewGraphEnvironment/new_graphiti/tree/main/posts/2024-11-15-bcdata-ortho-historic/exports/)
 
 ## Pick a Horse
-We are absolutely privaledged to potentially have the assistance of Mike Price to help us obtain this imagery from the UBC archives.  Sooo... - unless he has a preference that 100% can override our recommendation - we would think that he would probably prefer clear direction from us.  Soooo - to start - thinking the best plan is to go with the earliest imagery possible and we scan in the "before `r q_date_end1`" timeframe.  The name of the csv with that information is ``r basename(lfile_name_photos(photos1))`` and the file can found along with the other export at the link above or individually [here](`r lpath_link(photos1)`).
+We are absolutely privaledged to potentially have the assistance of [Mike Price](https://www.researchgate.net/profile/Michael-Price-14) to help us obtain this imagery from the UBC archives.  Sooo... - unless he has a preference that 100% can override our recommendation - we would think that he would probably prefer clear direction from us.  Soooo - to start - thinking the best plan is to go with the imagery in the timeframe of `r range(photos2$photo_date)`" since the coverage seems much better than the earlier images...  The name of the csv with that information is ``r basename(lfile_name_photos(photos2))`` and the file can found along with the other export at the link above or individually [here](`r lpath_link(photos2)`).
 
 ## Outstanding Issues
 
   - Why does the date range of the photos we can get IDs for through the [WIMSI](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/digital-imagery/air-photos) online portal not overlap the dates listed in the BC Data Catalouge [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points) for the dates in the Historic Imagery Points that are listed as 1950 - 1963 vs our earliest records from the portal at `r min(photos_aoi_refined$photo_date)`??!!
-  - Is it crazy to export all mapsheets for the area and add Buck Creek to our study area (easy enough to do) or is this a reasonable start and good enough for a start?
+
 
