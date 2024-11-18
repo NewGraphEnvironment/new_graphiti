@@ -279,13 +279,6 @@ map <- ggplot() +
     color = "blue",
     size = 1
   ) +
-  geom_sf_text(
-    data = layers_trimmed$l_streams |> dplyr::distinct(gnis_name, .keep_all = TRUE),
-    aes(
-      label = gnis_name
-    ),
-    size = 2  # Adjust size of the text labels as needed
-  ) +
   geom_sf(
     data = layers_trimmed$l_rail,
     color = "black",
@@ -306,7 +299,14 @@ map <- ggplot() +
     size = 3  # Adjust size of the text labels as needed
   )
 
-map
+map +
+  geom_sf_text(
+    data = layers_trimmed$l_streams |> dplyr::distinct(gnis_name, .keep_all = TRUE),
+    aes(
+      label = gnis_name
+    ),
+    size = 2  # Adjust size of the text labels as needed
+  ) 
 ```
 
 ```{r tab-imagery-points, eval=TRUE}
@@ -467,14 +467,24 @@ map +
   geom_sf(
     data = photos_aoi_refined,
     alpha = 0.25,
+  ) +
+  geom_sf_text(
+    data = layers_trimmed$l_streams |> dplyr::distinct(gnis_name, .keep_all = TRUE),
+    aes(
+      label = gnis_name
+    ),
+    size = 2  # Adjust size of the text labels as needed
   ) 
 ```
 
-That is not as many photos - but still quite a few (`r nrow(photos_aoi_refined)`). The table below can be used to filter these photos from any time and/or mapsheet and export the result to csv or excel file.  
+That is not as many photos - but still quite a few (`r nrow(photos_aoi_refined)`). @fig-dt1 below can be used to filter these photos from any time and/or mapsheet and export the result to csv or excel file.  
 
-```{r tab1}
+```{r }
+#| label: fig-dt1
+#| tbl-cap: "All photo centroids located with watershed study area."
 photos_aoi_refined |> 
-  my_dt_table(cols_freeze_left = 2)
+  dplyr::select(-id) |> 
+  my_dt_table(cols_freeze_left = 0)
 ```
 
 ## Filter Photos by Date
@@ -562,14 +572,44 @@ photos_all <- dplyr::bind_rows(photos1, photos2, photos3)
 ```
 
 
-Now let's have a look at what we have
-```{r map5}
+Now let's have a look at the individual year components (@fig-map5) as well as the whole dataset (@fig-map6). We are  privileged to potentially have the assistance of [Mike Price](https://www.researchgate.net/profile/Michael-Price-14) to help us obtain this imagery from the UBC archives. If there are too many photos to grab as is - the table below can be filtered by `photo_year` to reduce the number of photos. The resulting filtered dataset can then be downloaded by pressing the `CSV` or `Excel` buttons at the bottom of the table.... 
+
+
+```{r fig-map5, fig.cap=my_caption}
+
+my_caption <- "Amalgamated photo points presented by year."
 map +
   geom_sf(
   data = photos_all
-  )
+  ) +
+  facet_wrap(~ photo_year)
   
 ```
+
+```{r fig-map6, fig.cap=my_caption}
+
+my_caption <- "Amalgamated photo points"
+map +
+  geom_sf(
+  data = photos_all
+  ) +
+  geom_sf_text(
+    data = layers_trimmed$l_streams |> dplyr::distinct(gnis_name, .keep_all = TRUE),
+    aes(
+      label = gnis_name
+    ),
+    size = 2  # Adjust size of the text labels as needed
+  ) 
+  
+```
+
+```{r dt2}
+
+photos_all |> 
+  dplyr::select(-id) |> 
+  my_dt_table(cols_freeze_left = 0)
+```
+
 
 ## Export `csv` with Photo Information
 Let's burn out csv that can be used to find the imagery for the `r nrow(photos_all)` photos above.
