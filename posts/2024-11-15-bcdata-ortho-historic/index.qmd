@@ -3,7 +3,7 @@ title: "Getting details of historic orthophoto imagery with R"
 author: "al"
 date: "2024-11-15"
 date-modified: "2024-11-17"
-categories: [fwapg, r, bcdata]
+categories: [fwapg, r, bcdata, imagery, api]
 image: "image.jpg"
 params:
   repo_owner: "NewGraphEnvironment"
@@ -28,6 +28,7 @@ suppressMessages(library(tidyverse))
 library(ggplot2)
 library(bcdata)
 library(fwapgr)
+library(knitr)
 suppressMessages(library(sf))
 # library(leaflet)
 # library(leafem)
@@ -128,7 +129,7 @@ lburn_sf(
 Next we grab a few key layers from the BC Data Catalougue API using convience functions in our `rfp` package ("Reproducable Field Products") which wrap the provincially maintained `bcdata` package.  We grab:
 
   - Railways
-  - Streams in the Bulkley Watershed group that are 5th order or greater.
+  - Streams in the Bulkley Watershed group that are 4th order or greater.
   - [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points)
   - [Historic Imagery Polygons](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-polygons)
   - [NTS 1:50,000 Grid](https://catalogue.data.gov.bc.ca/) (we will see why in a second)
@@ -156,7 +157,7 @@ l_streams <- rfp::rfp_bcd_get_data(
 ) |> 
   sf::st_transform(4326) |> 
   janitor::clean_names() |> 
-  dplyr::filter(stream_order > 4)
+  dplyr::filter(stream_order >= 4)
 
 # historic orthophotos
 # WHSE_IMAGERY_AND_BASE_MAPS.AIMG_HIST_INDEX_MAPS_POLY
@@ -263,23 +264,9 @@ layers_trimmed <- layers_to_load |>
   )
 ```
 
-OK, seems we cannot get machine readable historical air photo information from the  downloaded from the BC data catalogue [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points)
-  and [Historic Imagery Polygons](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-polygons) layers perhpas because the majority of the photos are not georeferenced? What we see in the map under the table below (red dot on map) is one point which contains 8 records including links to pdfs and kmls which are basically a georeferenced drawing of where the imagery overlaps.  From as far as I can tell - if we wanted to try to use these kmls or pdfs to select orthoimagery we would need to manually eyeball where the photo polygons overlap where we want to see imagery for and manually write down identifiers for photo by hand. Maybe I am missing something but it sure seems that way.  
-  
-  
-```{r tab-imagery-points, eval=TRUE}
+OK, seems we cannot get machine readable historical air photo information from the downloaded from the BC data catalogue [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points) layer perhaps because the majority of the photos are not georeferenced? What we see in the map and table below (red dot on map) is one point which contains 8 records including links to pdfs and kmls which are basically a georeferenced drawing of where the imagery overlaps  (@fig-1).  From as far as I can tell - if we wanted to try to use the kmls or pdfs linked in the attribute tables of the "Historic Imagery Points" layer to select orthoimagery we would need to  eyeball where the photo polygons overlap where we want to see imagery for and manually write down identifiers for photo by hand. Maybe I am missing something but it sure seems that way.  
 
-#This what the information in the [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points) layer looks like.
-
-layers_trimmed$l_imagery_hist |> 
-  sf::st_drop_geometry() |> 
-  knitr::kable()
-
-```
-
-
-
-```{r}
+```{r map1}
 map <- ggplot() +
   geom_sf(
       data = layers_trimmed$aoi,
@@ -292,15 +279,18 @@ map <- ggplot() +
     color = "blue",
     size = 1
   ) +
+  geom_sf_text(
+    data = layers_trimmed$l_streams |> dplyr::distinct(gnis_name, .keep_all = TRUE),
+    aes(
+      label = gnis_name
+    ),
+    size = 2  # Adjust size of the text labels as needed
+  ) +
   geom_sf(
     data = layers_trimmed$l_rail,
     color = "black",
     size = 1
   ) +
-  # geom_sf(
-  #   data = layers_trimmed$l_imagery,
-  #   alpha = 0,
-  # ) +
   geom_sf(
     data = layers_trimmed$l_imagery_hist,
     color = "red",
@@ -315,31 +305,25 @@ map <- ggplot() +
     aes(label = map_tile),
     size = 3  # Adjust size of the text labels as needed
   )
-  # ggdark::dark_theme_void()
-
 
 map
 ```
 
-It does however seem that the [Air Photo Centroids](https://catalogue.data.gov.bc.ca/dataset/airphoto-centroids) are georeferenced  
+```{r tab-imagery-points, eval=TRUE}
 
+#This what the information in the [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points) layer looks like.
 
-```{r}
-#if we go through the online interface, we can use a NTS 1:50,000 map sheet to export a CSV file that does contain information about individual air photo locations (centre coordinate?). Our study area is huge so to begin with we can look at the area from somewhere around the confluence of McQuarie Creek and the Neexdzii Kwah up to say the upstream end of Bulkley Lake. For this area we just have two 1:50,000 map sheets (`093L09` and `093L08`). 
+layers_trimmed$l_imagery_hist |> 
+  sf::st_drop_geometry() |> 
+  knitr::kable()
+
 ```
+  
+<br>
 
-```{r fig1, eval=FALSE}
+```{r fig-1, fig.cap=my_caption, eval=TRUE}
 
-# ## Download Photo Information
-
-# Next, we go into the provincial [WIMSI](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/digital-imagery/air-photos) service and for each NTS 1:50,000 grid - we state the date range we would like to search and export. Thinking we may be able to hit the API directly with a query in the future which would eliminate the painful point and click portion of this workflow.  For now though - we are doing this piece manually and chose the following options:
-# 
-#   - `Years from`: 1950 to 2024
-#   - `Media`: All
-#   - `Only show georeferenced images`: - No
-# 
-# Running these options exports a csv for each query.  We saved them in this repo with their original sane names `airphotos.{mapsheet}.csv`.
-
+my_caption <- "Screenshot of kml downloaded from link provided in Historic Imagery Points."
 knitr::include_graphics(fs::path(
   path_post,
   "fig",
@@ -349,6 +333,23 @@ knitr::include_graphics(fs::path(
 )
 
 ```
+
+
+
+<br>
+  
+For the [Historic Imagery Polygons](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-polygons) layer the range of `year_operational` is `r range(layers_trimmed$l_imagery$year_operational)`.  This is not as far back as we would prefer to be looking.
+  
+
+<br>
+
+It does however seem that each of the [Air Photo Centroids](https://catalogue.data.gov.bc.ca/dataset/airphoto-centroids) are georeferenced with a date range of:
+
+
+```{r}
+range(layers_trimmed$l_photo_centroids$photo_date)
+```
+
 
 ```{r ld-csv, eval = FALSE}
 
@@ -386,18 +387,7 @@ map +
     data = layers_trimmed$l_photo_centroids,
     alpha = 0.25
   ) 
-  # geom_sf_text(
-  #   data = photos_aoi,
-  #   aes(
-  #     label = 
-  #       paste(
-  #         # roll_frame_series,
-  #         frame,
-  #         sep = "-"
-  #       )
-  #   ),
-  #   size = 2  # Adjust size of the text labels as needed
-  # )
+
 ```
 
 That is a lot of photos! `r nrow(layers_trimmed$l_photo_centroids)` photos to be exact!!!
@@ -411,14 +401,14 @@ q_drm_other <- 5000
 ```
 
 ## Clip Photo Information with Streams Buffers
-Here are our query parameters to narrow down the area within our selected mapsheets in which we want to find photos for:
+Here are our query parameters to narrow down the area within our study are watershed in which we want to find photos for:
 
   - Buffer: `r q_buffer`m - size of buffer used on either side of stream lines selected
   - Stream segments: 
     + Bulkley River (`gnis_name` in the stream layer)
     + Maxan Creek
     + Buck Creek
-    + stream segments which begin before `r q_drm_other` from the mainstem
+    + for each remaining stream -  segments of that stream which begin before `r q_drm_other`m from the downstream system
 
 
 
@@ -436,12 +426,13 @@ knitr::include_graphics(fs::path(
 
 
 ```{r aoi-refine}
+r_streams <- c("Maxan Creek", "Buck Creek")
 
 aoi_refined_raw <- layers_trimmed$l_streams |> 
   # removed  & downstream_route_measure < q_drm_main for bulkley as doestn't cahnge 1960s query and increases beyond just by 5 photos
   dplyr::filter(gnis_name == "Bulkley River"|
                   gnis_name != "Bulkley River" & downstream_route_measure < q_drm_other |
-                  gnis_name %in% c("Maxan Creek", "Buck Creek")) |> 
+                  gnis_name %in% r_streams) |> 
   # dplyr::arrange(downstream_route_measure) |>
   # calculate when we get to length_m by adding up the length_metre field and filtering out everything up to length_m
   # dplyr::filter(cumsum(length_metre) <= length_m) |>
@@ -476,68 +467,110 @@ map +
   ) 
 ```
 
-## Filter Photos by Date
-Now lets filter by date to see what our options are including the earliest photos possible.  Here is our range to choose from:
-
-```{r date-range}
-range(photos_aoi_refined$photo_date)
-```
-```{r date-param}
-q_date_end1 <- "1969-12-31"
-q_date_start1 <- "1970-01-01"
-q_date_end2 <- "1975-12-31"
-
-```
-
-There is lots going on here so we will map a comparison of a couple of options. First we will look at all photos available for before 1970 (red dots on map below).  We will also see what photos we have for between `r q_date_start1` and on or before `r q_date_end2` (blue dots on map below)?
-
-```{r photos-filter}
-photos1 <- photos_aoi_refined |> 
-  dplyr::filter(
-      photo_date <= q_date_end1
-  )
-
-photos2 <- photos_aoi_refined |> 
-  dplyr::filter(
-    photo_date >= q_date_start1 &
-      photo_date <= q_date_end2
-  )
-```
-
-
-```{r map4}
-map +
-  geom_sf(
-    data = photos1,
-    color = "red",
-    alpha = 0.25,
-  ) 
-
-map + 
-  geom_sf(
-    data = photos2,
-    color = "blue",
-    alpha = 0.25,
-  ) 
-```
-
-Well we have some tough decisions to make as we seem to have better coverage in the Maxan Creek drainage in the 70s (`r nrow(photos2)` photos) but good coverage of the mainstem Neexdzii Kwah in the 60s (`r nrow(photos1)` photos)...
-
-<br>
-
- 
-The table below can be used to filter photos from any time (provided it's location falls in the watershed area we clipped our downloaded points to) and export the result to csv or excel file.  This could be useful for narrowing down our search not only to timescales but also to specific mapsheets with options given for both NTS 1:50,000  as well as BCGS 1:20,000 grid mapsheets.
+That is not as many photos - but still quite a few (`r nrow(photos_aoi_refined)`). The table below can be used to filter these photos from any time and/or mapsheet and export the result to csv or excel file.  
 
 ```{r tab1}
 photos_aoi_refined |> 
   my_dt_table(cols_freeze_left = 2)
 ```
 
-## Export `csv` Files with Photo Information
-Let's burn out some csvs that can be used to find the imagery for:
+## Filter Photos by Date
+Now lets map by year to see what our options are including the earliest photos possible.  Here is our range to choose from:
 
-  - "before `r q_date_end1`"  
-  - `r q_date_start1` to `r q_date_end2` timeline
+```{r date-range}
+range(photos_aoi_refined$photo_date)
+```
+`
+
+```{r map4}
+map +
+geom_sf(
+  data = photos_aoi_refined |> dplyr::filter(photo_year <= "1975")
+  ) +
+  facet_wrap(~ photo_year)
+
+
+```
+
+Well - looks like we get really good coverage of the Bulkley River mainstem in 1968 then much better coverage of the Buck Creek drainage and Maxan Creek in 1971. For 1975 - the coverage of the Bulkley mainstem and Maxan Creek is pretty good...
+
+<br>
+
+Thinking the ideal thing to do is to grab the photos from:
+
+  - 1968 all
+  - 1971 for the Buck Creek and Maxan Creek areas only
+  - 1975 Maxan Creek only
+
+<br>
+
+```{r refine-year-streams}
+# spatially represent just Buck and Maxan, buffer and clip the 1971 photos
+# "r_" is for "refine"
+r_year1 <- "1968"
+r_year2 <- "1971"
+r_year3 <- "1975"
+
+r_streams2 <- c("Maxan Creek")
+
+l_streams_refined1 <- layers_trimmed$l_streams |> 
+  # we defined r_streams in chunk way above 
+  dplyr::filter(gnis_name %in% r_streams) |> 
+  sf::st_union() |> 
+  # we need to run st_sf or we get a sp object in a list...
+  sf::st_sf()
+  
+aoi_refined_buffered2 <- sf::st_buffer(
+  l_streams_refined1,
+  q_buffer, endCapStyle = "FLAT"
+) 
+
+l_streams_refined2 <- layers_trimmed$l_streams |> 
+  # we defined r_streams in chunk way above 
+  dplyr::filter(gnis_name %in% r_streams2) |> 
+  sf::st_union() |> 
+  # we need to run st_sf or we get a sp object in a list...
+  sf::st_sf()
+  
+aoi_refined_buffered3 <- sf::st_buffer(
+  l_streams_refined2,
+  q_buffer, endCapStyle = "FLAT"
+) 
+
+# filter first year
+photos1 <- photos_aoi_refined |> 
+  dplyr::filter(
+      photo_year == r_year1
+  )
+
+# filter second year using just the streams we want to include
+photos2 <- sf::st_intersection(
+  layers_trimmed$l_photo_centroids |> dplyr::filter(photo_year == r_year2), 
+  aoi_refined_buffered2
+  )
+
+# filter second year using just the streams we want to include
+photos3 <- sf::st_intersection(
+  layers_trimmed$l_photo_centroids |> dplyr::filter(photo_year == r_year3), 
+  aoi_refined_buffered3
+  )
+
+photos_all <- dplyr::bind_rows(photos1, photos2, photos3)
+```
+
+
+Now let's have a look at what we have
+```{r map5}
+map +
+  geom_sf(
+  data = photos_all
+  )
+  
+```
+
+## Export `csv` with Photo Information
+Let's burn out csv that can be used to find the imagery for the `r nrow(photos_all)` photos above.
+
 
 ```{r burn1, eval = TRUE}
 lfile_name_photos <- function(dat = NULL){
@@ -553,26 +586,11 @@ lfile_name_photos <- function(dat = NULL){
     )
 }
 
-# path_output <- fs::path(
-#       path_post,
-#       "exports",
-#       paste(
-#         "airphotos",
-#         paste(range(photos$photo_date), collapse = "_"),
-#         sep = "_"
-#       ),
-#       ext = "csv"
-#     )
-
-photos1 |> 
+photos_all |> 
   readr::write_csv(
-    lfile_name_photos(photos1), na =""
+    lfile_name_photos(photos_all), na =""
   )
 
-photos2 |> 
-  readr::write_csv(
-    lfile_name_photos(photos2), na =""
-  )
 
 lpath_link <- function(dat = NULL){
   paste0(
@@ -585,13 +603,8 @@ lpath_link <- function(dat = NULL){
 
 ```
 
-We can view and download exported csv files [here](https://github.com/NewGraphEnvironment/new_graphiti/tree/main/posts/2024-11-15-bcdata-ortho-historic/exports/)
+We can view and download exported csv files [here](https://github.com/NewGraphEnvironment/new_graphiti/tree/main/posts/2024-11-15-bcdata-ortho-historic/exports/). 
 
-## Pick a Horse
-We are absolutely privaledged to potentially have the assistance of [Mike Price](https://www.researchgate.net/profile/Michael-Price-14) to help us obtain this imagery from the UBC archives.  Sooo... - unless he has a preference that 100% can override our recommendation - we would think that he would probably prefer clear direction from us.  Soooo - to start - thinking the best plan is to go with the imagery in the timeframe of `r range(photos2$photo_date)`" since the coverage seems much better than the earlier images...  The name of the csv with that information is ``r basename(lfile_name_photos(photos2))`` and the file can found along with the other export at the link above or individually [here](`r lpath_link(photos2)`).
 
-## Outstanding Issues
-
-  - Why does the date range of the photos we can get IDs for through the [WIMSI](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/digital-imagery/air-photos) online portal not overlap the dates listed in the BC Data Catalouge [Historic Imagery Points](https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points) for the dates in the Historic Imagery Points that are listed as 1950 - 1963 vs our earliest records from the portal at `r min(photos_aoi_refined$photo_date)`??!!
 
 
