@@ -393,10 +393,13 @@ map +
 That is a lot of photos! `r nrow(layers_trimmed$l_photo_centroids)` photos to be exact!!!
 
 
-```{r}
+```{r params-streams}
+# amount to buffer all stream segments
 q_buffer <- 500
-q_drm_main <- 263795
-q_drm_other <- 5000
+# q_drm_main <- 263795
+
+# length of streams other than selected explicity to buffer
+q_drm_other <- 3000
 
 ```
 
@@ -408,7 +411,7 @@ Here are our query parameters to narrow down the area within our study are water
     + Bulkley River (`gnis_name` in the stream layer)
     + Maxan Creek
     + Buck Creek
-    + for each remaining stream -  segments of that stream which begin before `r q_drm_other`m from the downstream system
+    + for each remaining stream -  segments of that stream which begin before `r q_drm_other`m from the downstream system (i.e. the first `r q_drm_other/1000`km) of stream.
 
 
 
