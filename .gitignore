@@ -6,7 +6,6 @@
 /.quarto/
 /_site/
 
-NewGraphEnvironment.bib
 
 posts/2024-06-19-precipitation/data/*.nc
 posts/2024-06-30-land-cover/data/**/*.tif
