@@ -15,26 +15,23 @@ format:
 
 Whoa Bobby-Joe.  
 
-Image by ChatGPT.
-
-Crazy all day journey here to set up a [TiTiler](https://github.com/developmentseed/titiler) on a remote server. Thanks 
-to ChatGPT for the help.
+Journey here to set up a [TiTiler](https://github.com/developmentseed/titiler) on a remote server. 
 
 This is a continuation of a past post that you can find [here](https://www.newgraphenvironment.com/new_graphiti/posts/2024-09-21-aws-cors-cog-leaflet/).
+Thanks to ChatGPT for the help. Image by ChatGPT.
 
-We already have a bucket set up to serve our COG imagery files and we have crafted a simple index.HTML file to point to 
-those COG files and serve them out in a basic leaflet map. A little bit of complexity arrives because we need a tile service 
-in order for these images to be able to be rendered in the browser. For that we need something like `titiler` running 
+We already have a bucket set up to serve our COG imagery files and we have crafted a simple `index.HTML` file on `AWS` to point to 
+a COG file and serve it out in a basic leaflet map. A little bit of complexity arrives because we want a tile service 
+in order for these images to be able to be rendered in the browser using server side rendering. For that we need something like `TiTiler` running 
 on a cloud instance. So we're gonna document that set up on AWS here so we can find it again.
 
-We are gonna use something called elastic beanstalk (eb), which is a AWS service to simplify things for us so the first thing 
-we need to do was
+To enable scalability and simplify deployment we will use [`AWS Elastic Beanstalk`](https://aws.amazon.com/elasticbeanstalk/?gclid=Cj0KCQiA4rK8BhD7ARIsAFe5LXIss1fnBHnOiluC0QJbB7A6W4AHZ-4hnYtJsmdcfZcLwHWWCjjLdC0aAheVEALw_wcB&trk=420d780f-52e0-462f-8a22-617780037847&sc_channel=ps&ef_id=Cj0KCQiA4rK8BhD7ARIsAFe5LXIss1fnBHnOiluC0QJbB7A6W4AHZ-4hnYtJsmdcfZcLwHWWCjjLdC0aAheVEALw_wcB:G:s&s_kwcid=AL!4422!3!651612435557!e!!g!!elastic%20beanstalk!19836375244!150076953787) (`eb`). We are on a mac so first thing we do is:
 
     brew install a WSEBCLI. 
     
     
-After that's done - because we are already set up with things like environmental variables for configuration of AWS it is 
-going to link to those credentials automatically on initialization. 
+Because we are already set up with credentials through environmental variables back when we set up [`awscli`](https://formulae.brew.sh/formula/awscli) `eb`
+will link to those credentials automatically on initialization. 
 
 So next we need to identify a launch template for the `eb` environment as per these [docs](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environments-cfg-autoscaling-launch-templates.html)
 
@@ -61,7 +58,7 @@ which gives us
 }
 ```
 
-So then we create a launch template with the following cmd:
+So then we do the long way and first create a launch template with the following cmd:
 
     aws ec2 create-launch-template --launch-template-name TitilerTemplate \
     --launch-template-data '{
@@ -87,16 +84,16 @@ This gives us back this which we use to get our LaunchTemplateId:
 
 The default security group is likely not appropriate for a public-facing tile server because it might:
 
-Allow broad internal access within your AWS account, which is unnecessary.
-Restrict external traffic, preventing public access to your tiles.
+  - Allow broad internal access within your AWS account, which is unnecessary.
+  - Restrict external traffic, preventing public access to your tiles.
 
 For a public-facing tile server like Titiler, the security group should:
 
-Allow Inbound HTTP/HTTPS Traffic:
-Open port 80 (HTTP) and port 443 (HTTPS) to the world (0.0.0.0/0).
-Restrict Unnecessary Access:
-Limit other inbound traffic (e.g., SSH or internal AWS traffic) unless explicitly needed.
-Create a Custom Security Group
+  - Allow Inbound HTTP/HTTPS Traffic:
+  - Open port 80 (HTTP) and port 443 (HTTPS) to the world (0.0.0.0/0).
+  - Restrict Unnecessary Access:
+  - Limit other inbound traffic (e.g., SSH or internal AWS traffic) unless explicitly needed.
+  - Create a Custom Security Group
 
 Here’s how to set up a security group specifically for your tile server:
 
@@ -123,17 +120,8 @@ Get the Security Group ID:
 Update the Launch Template: Add the Security Group ID to the Launch Template using its LaunchTemplateId:
 
 
-
-```
-option_settings:
-  aws:autoscaling:launchtemplate:
-    LaunchTemplateId: lt-049eff4ed7a9490f8
-    InstanceType: t3.micro
-    SecurityGroups: sg-xxxxxxxxxxxxxxxxxx
-```
-
 Then we make a litle `launchtemplate.config` file and put it in our main project directory `elastic-beanstock` in a 
-`.ebextensions` directory.  It looks like this:
+`.ebextensions` directory.  It looks like this with our `SecurityGroups` id added as per our last query:
 
 ```
 option_settings:
@@ -146,7 +134,8 @@ option_settings:
     IamInstanceProfile: "aws-elasticbeanstalk-ec2-role"
 ```
 
-Then we make a `Dockerrun.aws.json` file to go in our main project directory `elastic-beanstock`.  It looks like this:
+In order to have an easy launch of `Titiler` we make a `Dockerrun.aws.json` file to go in our main `elastic-beanstock` roject 
+directory we have created to do this work.  The `Dockerrun.aws.json` file looks like this:
 
 ```
 {
@@ -188,49 +177,41 @@ Then we create a `trust-policy.json` in our main `elastic-beanstock` directory t
 }
 ```
 
-Attach the policy 
+Now we attach the policy 
 
     aws iam attach-role-policy --role-name aws-elasticbeanstalk-service-role \
     --policy-arn arn:aws:iam::aws:policy/AmazonEC2FullAccess
 
-Verify the policy is attached:
+To be sure - we verify the policy is attached:
 
     aws iam list-attached-role-policies --role-name aws-elasticbeanstalk-service-role
 
 You should see AmazonEC2FullAccess in the output.
 
-Verify the VPC
+Verify the VPC. A VPC (Virtual Private Cloud) is a private, isolated network within AWS where you can launch and manage 
+AWS resources like EC2 instances, databases, and load balancers. Run this command to see the route tables for each subnet 
+and determine if they are public:
 
     aws ec2 describe-vpcs --query "Vpcs[?IsDefault].VpcId" --region us-west-2 --output text
     
-Update .ebextensions/launchtemplate.config.  Now it looks like this:
 
-```
-option_settings:
-  aws:autoscaling:launchconfiguration:
-    SecurityGroups: sg-xxxxxxxxxxxxxx
-    InstanceType: t3.micro
-    RootVolumeType: gp3
-    MonitoringInterval: "1 minute"
-    DisableIMDSv1: true
-    IamInstanceProfile: "aws-elasticbeanstalk-ec2-role"
-  aws:ec2:vpc:
-    VPCId: vpc-xxxxxxxxxxxxx
-    ```
+Next it gets weird - Find the Default Route Table with a query that includes our uniqye `VpcId` which we recieved from
+our last query:
 
-Next it gets weird - Find the Default Route Table:
-
-    aws ec2 describe-route-tables --filters Name=vpc-id,Values=vpc-0232b379f43b2237f --region us-west-2
+    aws ec2 describe-route-tables --filters Name=vpc-id,Values=vpc-XXXXXXXXXXXXX --region us-west-2
 
 
-THEN:
+Because the default route table is connected to an Internet Gateway - subnets need to be explicitly associated with this route table.
+Look for entries with "DestinationCidrBlock": "0.0.0.0/0" and "GatewayId": "igw-xxxxxxxx" in the output. 
+These indicate that the subnet is public.; those without are private:
 
-    aws ec2 associate-route-table --route-table-id rtb-0ae8d407cc5bb8d24 --subnet-id subnet-xxx
+    aws ec2 associate-route-table --route-table-id rtb-xx --subnet-id subnet-xxx
     aws ec2 associate-route-table --route-table-id rtb-xx --subnet-id subnet-xx
     aws ec2 associate-route-table --route-table-id rtb-x --subnet-id subnet-x
     aws ec2 associate-route-table --route-table-id rtb-xx --subnet-id subnet-xx
 
-Update .ebextensions/launchtemplate.config: Ensure your configuration file includes the associated subnets:
+Update your `VPCId` in your `.ebextensions/launchtemplate.config`.
+Also Ensure your configuration file includes the associated subnets:
 
 ```
 option_settings:
@@ -243,7 +224,7 @@ option_settings:
     IamInstanceProfile: "aws-elasticbeanstalk-ec2-role"
   aws:ec2:vpc:
     VPCId: vpc-xxx
-    Subnets: subnet-0af968a6248b166ec,subnet-0f1ae62f1124d33b9,subnet-042e5c84263f93d15,subnet-05513f7bc88739e10
+    Subnets: subnet-xx,subnet-xx,subnet-xx,subnet-xx
 
 ```
 
@@ -278,9 +259,8 @@ with the COG.
     
 Geez... Here it is and can be seen in alll its fullscreen glory [here](http://23cog.s3-website-us-west-2.amazonaws.com/test-viewer/)!!!
 
-```{r, map}
-map_url <- '<iframe src="http://23cog.s3-website-us-west-2.amazonaws.com/test-viewer/" width="100%" height="600" frameborder="0"></iframe>'
-
-knitr::asis_output(map_url)
-```
-
+<iframe src="http://23cog.s3-website-us-west-2.amazonaws.com/test-viewer/" 
+        style="border: none;" 
+        width="100%" 
+        height="600">
+</iframe>
