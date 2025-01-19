@@ -196,13 +196,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>Whoa Bobby-Joe.</p>
-<p>Image by ChatGPT.</p>
-<p>Crazy all day journey here to set up a <a href="https://github.com/developmentseed/titiler">TiTiler</a> on a remote server. Thanks to ChatGPT for the help.</p>
-<p>This is a continuation of a past post that you can find <a href="https://www.newgraphenvironment.com/new_graphiti/posts/2024-09-21-aws-cors-cog-leaflet/">here</a>.</p>
-<p>We already have a bucket set up to serve our COG imagery files and we have crafted a simple index.HTML file to point to those COG files and serve them out in a basic leaflet map. A little bit of complexity arrives because we need a tile service in order for these images to be able to be rendered in the browser. For that we need something like <code>titiler</code> running on a cloud instance. So we’re gonna document that set up on AWS here so we can find it again.</p>
-<p>We are gonna use something called elastic beanstalk (eb), which is a AWS service to simplify things for us so the first thing we need to do was</p>
+<p>Journey here to set up a <a href="https://github.com/developmentseed/titiler">TiTiler</a> on a remote server.</p>
+<p>This is a continuation of a past post that you can find <a href="https://www.newgraphenvironment.com/new_graphiti/posts/2024-09-21-aws-cors-cog-leaflet/">here</a>. Thanks to ChatGPT for the help. Image by ChatGPT.</p>
+<p>We already have a bucket set up to serve our COG imagery files and we have crafted a simple <code>index.HTML</code> file on <code>AWS</code> to point to a COG file and serve it out in a basic leaflet map. A little bit of complexity arrives because we want a tile service in order for these images to be able to be rendered in the browser using server side rendering. For that we need something like <code>TiTiler</code> running on a cloud instance. So we’re gonna document that set up on AWS here so we can find it again.</p>
+<p>To enable scalability and simplify deployment we will use <a href="https://aws.amazon.com/elasticbeanstalk/?gclid=Cj0KCQiA4rK8BhD7ARIsAFe5LXIss1fnBHnOiluC0QJbB7A6W4AHZ-4hnYtJsmdcfZcLwHWWCjjLdC0aAheVEALw_wcB&amp;trk=420d780f-52e0-462f-8a22-617780037847&amp;sc_channel=ps&amp;ef_id=Cj0KCQiA4rK8BhD7ARIsAFe5LXIss1fnBHnOiluC0QJbB7A6W4AHZ-4hnYtJsmdcfZcLwHWWCjjLdC0aAheVEALw_wcB:G:s&amp;s_kwcid=AL!4422!3!651612435557!e!!g!!elastic%20beanstalk!19836375244!150076953787"><code>AWS Elastic Beanstalk</code></a> (<code>eb</code>). We are on a mac so first thing we do is:</p>
 <pre><code>brew install a WSEBCLI. </code></pre>
-<p>After that’s done - because we are already set up with things like environmental variables for configuration of AWS it is going to link to those credentials automatically on initialization.</p>
+<p>Because we are already set up with credentials through environmental variables back when we set up <a href="https://formulae.brew.sh/formula/awscli"><code>awscli</code></a> <code>eb</code> will link to those credentials automatically on initialization.</p>
 <p>So next we need to identify a launch template for the <code>eb</code> environment as per these <a href="https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environments-cfg-autoscaling-launch-templates.html">docs</a></p>
 <p>First thing is to find the latest Amazon Linux 2 AMI ID:</p>
 <pre><code>aws ssm get-parameters --names "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64" --region us-west-2</code></pre>
@@ -221,7 +220,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     ],
     "InvalidParameters": []
 }</code></pre>
-<p>So then we create a launch template with the following cmd:</p>
+<p>So then we do the long way and first create a launch template with the following cmd:</p>
 <pre><code>aws ec2 create-launch-template --launch-template-name TitilerTemplate \
 --launch-template-data '{
     "ImageId": "ami-093a4ad9a8cc370f4",
@@ -239,9 +238,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
 }</code></pre>
 <p>The default security group is likely not appropriate for a public-facing tile server because it might:</p>
-<p>Allow broad internal access within your AWS account, which is unnecessary. Restrict external traffic, preventing public access to your tiles.</p>
+<ul>
+<li>Allow broad internal access within your AWS account, which is unnecessary.</li>
+<li>Restrict external traffic, preventing public access to your tiles.</li>
+</ul>
 <p>For a public-facing tile server like Titiler, the security group should:</p>
-<p>Allow Inbound HTTP/HTTPS Traffic: Open port 80 (HTTP) and port 443 (HTTPS) to the world (0.0.0.0/0). Restrict Unnecessary Access: Limit other inbound traffic (e.g., SSH or internal AWS traffic) unless explicitly needed. Create a Custom Security Group</p>
+<ul>
+<li>Allow Inbound HTTP/HTTPS Traffic:</li>
+<li>Open port 80 (HTTP) and port 443 (HTTPS) to the world (0.0.0.0/0).</li>
+<li>Restrict Unnecessary Access:</li>
+<li>Limit other inbound traffic (e.g., SSH or internal AWS traffic) unless explicitly needed.</li>
+<li>Create a Custom Security Group</li>
+</ul>
 <p>Here’s how to set up a security group specifically for your tile server:</p>
 <p>Create the Security Group:</p>
 <pre><code>aws ec2 create-security-group --group-name titilersecuritygroup \
@@ -254,12 +262,7 @@ aws ec2 authorize-security-group-ingress --group-name titilersecuritygroup \
 <p>Get the Security Group ID:</p>
 <pre><code>aws ec2 describe-security-groups --group-names titilersecuritygroup --query "SecurityGroups[0].GroupId" --output text</code></pre>
 <p>Update the Launch Template: Add the Security Group ID to the Launch Template using its LaunchTemplateId:</p>
-<pre><code>option_settings:
-  aws:autoscaling:launchtemplate:
-    LaunchTemplateId: lt-049eff4ed7a9490f8
-    InstanceType: t3.micro
-    SecurityGroups: sg-xxxxxxxxxxxxxxxxxx</code></pre>
-<p>Then we make a litle <code>launchtemplate.config</code> file and put it in our main project directory <code>elastic-beanstock</code> in a <code>.ebextensions</code> directory. It looks like this:</p>
+<p>Then we make a litle <code>launchtemplate.config</code> file and put it in our main project directory <code>elastic-beanstock</code> in a <code>.ebextensions</code> directory. It looks like this with our <code>SecurityGroups</code> id added as per our last query:</p>
 <pre><code>option_settings:
   aws:autoscaling:launchconfiguration:
     SecurityGroups: sg-xxxxxxxxxxxxxxxxxx
@@ -268,7 +271,7 @@ aws ec2 authorize-security-group-ingress --group-name titilersecuritygroup \
     MonitoringInterval: "1 minute"
     DisableIMDSv1: true
     IamInstanceProfile: "aws-elasticbeanstalk-ec2-role"</code></pre>
-<p>Then we make a <code>Dockerrun.aws.json</code> file to go in our main project directory <code>elastic-beanstock</code>. It looks like this:</p>
+<p>In order to have an easy launch of <code>Titiler</code> we make a <code>Dockerrun.aws.json</code> file to go in our main <code>elastic-beanstock</code> roject directory we have created to do this work. The <code>Dockerrun.aws.json</code> file looks like this:</p>
 <pre><code>{
     "AWSEBDockerrunVersion": "1",
     "Image": {
@@ -302,65 +305,45 @@ aws ec2 authorize-security-group-ingress --group-name titilersecuritygroup \
        }
    ]
 }</code></pre>
-<p>Attach the policy</p>
+<p>Now we attach the policy</p>
 <pre><code>aws iam attach-role-policy --role-name aws-elasticbeanstalk-service-role \
 --policy-arn arn:aws:iam::aws:policy/AmazonEC2FullAccess</code></pre>
-<p>Verify the policy is attached:</p>
+<p>To be sure - we verify the policy is attached:</p>
 <pre><code>aws iam list-attached-role-policies --role-name aws-elasticbeanstalk-service-role</code></pre>
 <p>You should see AmazonEC2FullAccess in the output.</p>
-<p>Verify the VPC</p>
+<p>Verify the VPC. A VPC (Virtual Private Cloud) is a private, isolated network within AWS where you can launch and manage AWS resources like EC2 instances, databases, and load balancers. Run this command to see the route tables for each subnet and determine if they are public:</p>
 <pre><code>aws ec2 describe-vpcs --query "Vpcs[?IsDefault].VpcId" --region us-west-2 --output text</code></pre>
-<p>Update .ebextensions/launchtemplate.config. Now it looks like this:</p>
+<p>Next it gets weird - Find the Default Route Table with a query that includes our uniqye <code>VpcId</code> which we recieved from our last query:</p>
+<pre><code>aws ec2 describe-route-tables --filters Name=vpc-id,Values=vpc-XXXXXXXXXXXXX --region us-west-2</code></pre>
+<p>Because the default route table is connected to an Internet Gateway - subnets need to be explicitly associated with this route table. Look for entries with “DestinationCidrBlock”: “0.0.0.0/0” and “GatewayId”: “igw-xxxxxxxx” in the output. These indicate that the subnet is public.; those without are private:</p>
+<pre><code>aws ec2 associate-route-table --route-table-id rtb-xx --subnet-id subnet-xxx
+aws ec2 associate-route-table --route-table-id rtb-xx --subnet-id subnet-xx
+aws ec2 associate-route-table --route-table-id rtb-x --subnet-id subnet-x
+aws ec2 associate-route-table --route-table-id rtb-xx --subnet-id subnet-xx</code></pre>
+<p>Update your <code>VPCId</code> in your <code>.ebextensions/launchtemplate.config</code>. Also Ensure your configuration file includes the associated subnets:</p>
 <pre><code>option_settings:
   aws:autoscaling:launchconfiguration:
-    SecurityGroups: sg-xxxxxxxxxxxxxx
+    SecurityGroups: sg-xxxxx
     InstanceType: t3.micro
     RootVolumeType: gp3
     MonitoringInterval: "1 minute"
     DisableIMDSv1: true
     IamInstanceProfile: "aws-elasticbeanstalk-ec2-role"
   aws:ec2:vpc:
-    VPCId: vpc-xxxxxxxxxxxxx
-    ```
-
-Next it gets weird - Find the Default Route Table:
-
-    aws ec2 describe-route-tables --filters Name=vpc-id,Values=vpc-0232b379f43b2237f --region us-west-2
-
-
-THEN:
-
-    aws ec2 associate-route-table --route-table-id rtb-0ae8d407cc5bb8d24 --subnet-id subnet-xxx
-    aws ec2 associate-route-table --route-table-id rtb-xx --subnet-id subnet-xx
-    aws ec2 associate-route-table --route-table-id rtb-x --subnet-id subnet-x
-    aws ec2 associate-route-table --route-table-id rtb-xx --subnet-id subnet-xx
-
-Update .ebextensions/launchtemplate.config: Ensure your configuration file includes the associated subnets:
+    VPCId: vpc-xxx
+    Subnets: subnet-xx,subnet-xx,subnet-xx,subnet-xx
 </code></pre>
-<p>option_settings: aws:autoscaling:launchconfiguration: SecurityGroups: sg-xxxxx InstanceType: t3.micro RootVolumeType: gp3 MonitoringInterval: “1 minute” DisableIMDSv1: true IamInstanceProfile: “aws-elasticbeanstalk-ec2-role” aws:ec2:vpc: VPCId: vpc-xxx Subnets: subnet-0af968a6248b166ec,subnet-0f1ae62f1124d33b9,subnet-042e5c84263f93d15,subnet-05513f7bc88739e10</p>
-<pre><code>
-
-Now we create the env:
-
-    eb create titiler-env 
-
-    
-Once that is completed we can find our Elastic Beanstalk environment's `CNAME` with:
-
-    eb status
-
-
-
-Its `CNAME: titiler-env.eba-s4jhubvr.us-west-2.elasticbeanstalk.com`
-
-    
-Here is what our setup file structure looks like.
-
-
-::: {.cell}
-
-```{.r .cell-code}
-fs::dir_tree("/Users/airvine/Projects/repo/elastic-beanstalk", recurse = TRUE, all = TRUE)</code></pre>
+<p>Now we create the env:</p>
+<pre><code>eb create titiler-env </code></pre>
+<p>Once that is completed we can find our Elastic Beanstalk environment’s <code>CNAME</code> with:</p>
+<pre><code>eb status</code></pre>
+<p>Its <code>CNAME: titiler-env.eba-s4jhubvr.us-west-2.elasticbeanstalk.com</code></p>
+<p>Here is what our setup file structure looks like.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>fs<span class="sc">::</span><span class="fu">dir_tree</span>(<span class="st">"/Users/airvine/Projects/repo/elastic-beanstalk"</span>, <span class="at">recurse =</span> <span class="cn">TRUE</span>, <span class="at">all =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>/Users/airvine/Projects/repo/elastic-beanstalk
 ├── .ebextensions
@@ -371,21 +354,12 @@ fs::dir_tree("/Users/airvine/Projects/repo/elastic-beanstalk", recurse = TRUE, a
 ├── Dockerrun.aws.json
 └── trust-policy.json</code></pre>
 </div>
-<p>:::</p>
+</div>
 <p>So we are going to add this to the index file that we serve in another AWS bucket to serve out our leaflet map with the COG.</p>
 <pre><code>'http://titiler-env.eba-s4jhubvr.us-west-2.elasticbeanstalk.com/cog/tiles/{z}/{x}/{y}.png?url=https://23cog.s3.amazonaws.com/20210906lampreymoricetribv220230317.tif'</code></pre>
 <p>Geez… Here it is and can be seen in alll its fullscreen glory <a href="http://23cog.s3-website-us-west-2.amazonaws.com/test-viewer/">here</a>!!!</p>
-<div class="cell">
-<details class="code-fold">
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>map_url <span class="ot">&lt;-</span> <span class="st">'&lt;iframe src="http://23cog.s3-website-us-west-2.amazonaws.com/test-viewer/" width="100%" height="600" frameborder="0"&gt;&lt;/iframe&gt;'</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">asis_output</span>(map_url)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output-display">
-<iframe src="http://23cog.s3-website-us-west-2.amazonaws.com/test-viewer/" width="100%" height="600" frameborder="0"></iframe>
-</div>
-</div>
+<iframe src="http://23cog.s3-website-us-west-2.amazonaws.com/test-viewer/" style="border: none;" width="100%" height="600">
+</iframe>
 
 
 
