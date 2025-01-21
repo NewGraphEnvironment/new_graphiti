@@ -105,6 +105,7 @@ lngs_geom_validate <- function(layer) {
 ## Download Spatial Data Layers
 Here we download our area of interest which is the Neexdzii Kwah River (a.k.a Upper Bulkley River) which is located between Houston, BC (just south of Smithers) and Topley, BC which is east of Houston and north of Burns Lake, BC.  We hit up our remote database managed by Simon Norris with a package built by Poisson Consulting specifically for the task.  We use the `downstream_route_measure` of the Bulkley River (identified through a unique `blue_line_key`) to query the watershed area upstream of the point where the Neexdzii Kwah River enters the Wedzin Kwah River (a.k.a Morice River).
 
+
 ```{r dl-aoi, eval = params$update_gis}
 
 # lets build a custom watersehed just for upstream of the confluence of Neexdzii Kwa and Wetzin Kwa
@@ -609,7 +610,7 @@ map +
 ```
 
 
-## Export `csv` with Photo Information
+### Export `csv` with Photo Information for Areas Adjacent to Streams
 Let's burn out a csv that can be used to find the imagery for the `r nrow(photos_all)` photos above.
 
 
@@ -654,6 +655,128 @@ photos_all |>
   my_dt_table(cols_freeze_left = 0)
 ```
 
+
+
+
+## Estimate Polygon Size based on the Scale and a 8 x 10 Inch Print
+
+```{r photos-poly-prep}
+# Add geometry
+photos_poly_prep <- layers_trimmed$l_photo_centroids |> 
+  dplyr::select(-id) |> 
+  sf::st_drop_geometry() |> 
+  # Parse scale
+  dplyr::mutate(
+    scale_parsed = as.numeric(stringr::str_remove(scale, "1:")),
+    width_m = 10 * scale_parsed * 0.0254,  # Width in meters
+    height_m = 8 * scale_parsed * 0.0254, # Height in meters
+  ) |>
+  # Create geometry
+  dplyr::rowwise() |> 
+  dplyr::mutate(
+    geometry = list({
+      # Create polygon corners
+      center <- c(longitude, latitude)
+      width_deg = (width_m / 2) / 111320  # Convert width to degrees (~111.32 km per degree latitude)
+      height_deg = (height_m / 2) / 111320 # Approximate for longitude; accurate near equator
+      
+      # Define corners
+      corners <- matrix(
+        c(
+          center[1] - width_deg, center[2] - height_deg, # Bottom-left
+          center[1] + width_deg, center[2] - height_deg, # Bottom-right
+          center[1] + width_deg, center[2] + height_deg, # Top-right
+          center[1] - width_deg, center[2] + height_deg, # Top-left
+          center[1] - width_deg, center[2] - height_deg  # Close the polygon
+        ),
+        ncol = 2,
+        byrow = TRUE
+      )
+      
+      # Create polygon geometry
+      sf::st_polygon(list(corners))
+    })
+  ) |> 
+  dplyr::ungroup() |>
+  # Convert to sf object
+  sf::st_as_sf(sf_column_name = "geometry", crs = 4326) 
+
+
+```
+
+
+```{r}
+# Assuming `photos_poly` has a `photo_year` column with years of interest
+photos_poly <- photos_poly_prep |> 
+  dplyr::filter(
+    photo_year %in% c(1968, 1971, 1975)
+    )
+
+l_photo_centroids_fltered <- layers_trimmed$l_photo_centroids |> 
+      dplyr::filter(
+        photo_year %in% c(1968, 1971, 1975)
+    )
+
+years <- unique(photos_poly$photo_year)
+
+years_centroids <- unique(l_photo_centroids_fltered$photo_year)
+
+map <- my_leaflet()
+
+# Loop through each year and add polygons with the year as a group
+for (year in years) {
+  map <- map |> 
+    leaflet::addPolygons(
+      data = photos_poly |> 
+        dplyr::filter(
+          photo_year == year
+          ), 
+      color = "black", 
+      weight = 1, 
+      smoothFactor = 0.5,
+      opacity = 1.0, 
+      fillOpacity = 0,
+      group = paste0("Polygons - ", year)
+    )
+}
+
+# Add centroid layers for each year
+for (year in years_centroids) {
+  map <- map |> 
+    leaflet::addCircleMarkers(
+      data = l_photo_centroids_fltered |> dplyr::filter(photo_year == year),
+      radius = 1,
+      color = "black",
+      fillOpacity = 0.7,
+      opacity = 1.0,
+      group = paste0("Centroids - ", year)
+    )
+}
+
+all_groups <- c(paste0("Polygons - ", years), paste0("Centroids - ", years_centroids))
+
+# Add layer control to toggle year groups
+map <- map |> 
+  addPolygons(
+    data = layers_trimmed$aoi, 
+              color = "black", 
+              weight = 1, 
+              smoothFactor = 0.5,
+              opacity = 1.0, 
+              fillOpacity = 0
+              ) |> 
+  leaflet::addLayersControl(
+    baseGroups = c(
+      "Esri.DeLorme",
+      "ESRI Aerial"),
+    overlayGroups = all_groups,
+    options = leaflet::layersControlOptions(collapsed = FALSE)
+  )
+
+map
+```
+
+
 ## Build a Interactive Dashboard that allows us to Visualize and Download by a Specific Year
 
 Use the filter and slider to see the coverage for photos we have for an individual year then export to excel or csv 
@@ -688,7 +811,7 @@ map3 <- sd |>
     fillOpacity = 1.0,
     weight = 2,
     opacity = 1.0
-  ) |> 
+  ) |>
   addPolylines(data=layers_trimmed$l_streams,
                opacity=0.75, 
                color = 'blue',
@@ -720,7 +843,7 @@ widgets <- crosstalk::bscols(
     group =  ~media
   ),
   crosstalk::filter_slider(
-    id = "label",
+    id = "year_slider",
     label = "Year",
     sharedData = sd,
     column = ~photo_year,
@@ -736,9 +859,4 @@ htmltools::browsable(
   )
 )
 ```
-
-
-
-
-
 
