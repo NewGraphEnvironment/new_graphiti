@@ -10,3 +10,6 @@
 posts/2024-06-19-precipitation/data/*.nc
 posts/2024-06-30-land-cover/data/**/*.tif
 posts/2024-07-13-tmap-wsg/*
+
+# just so we don't forget
+S2A_MSIL2A_T09UUA
