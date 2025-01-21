@@ -2,7 +2,7 @@
 title: "Getting details of historic orthophoto imagery with R"
 author: "al"
 date: "2024-11-15"
-date-modified: "2024-11-17"
+date-modified: "2025-01-20"
 categories: [fwapg, r, bcdata, imagery, api]
 image: "image.jpg"
 params:
@@ -30,8 +30,11 @@ library(bcdata)
 library(fwapgr)
 library(knitr)
 suppressMessages(library(sf))
-# library(leaflet)
-# library(leafem)
+library(crosstalk)
+library(leaflet)
+library(leafem)
+library(DT)
+library(htmltools)
 ```
 
 ```{r params}
@@ -477,9 +480,11 @@ map +
   ) 
 ```
 
-That is not as many photos - but still quite a few (`r nrow(photos_aoi_refined)`). @fig-dt1 below can be used to filter these photos from any time and/or mapsheet and export the result to csv or excel file.  
+That is not as many photos - but still quite a few (`r nrow(photos_aoi_refined)`). 
 
-```{r }
+```{r eval = FALSE}
+
+# @fig-dt1 below can be used to filter these photos from any time and/or mapsheet and export the result to csv or excel file.  
 #| label: fig-dt1
 #| tbl-cap: "All photo centroids located with watershed study area."
 photos_aoi_refined |> 
@@ -509,7 +514,7 @@ Well - looks like we get really good coverage of the Bulkley River mainstem in 1
 
 <br>
 
-Thinking the ideal thing to do is to grab the photos from:
+If we just wanted the areas near the river and we don't mind mixing years - we grab the photos from:
 
   - 1968 all
   - 1971 for the Buck Creek and Maxan Creek areas only
@@ -603,16 +608,9 @@ map +
   
 ```
 
-```{r dt2}
-
-photos_all |> 
-  dplyr::select(-id) |> 
-  my_dt_table(cols_freeze_left = 0)
-```
-
 
 ## Export `csv` with Photo Information
-Let's burn out csv that can be used to find the imagery for the `r nrow(photos_all)` photos above.
+Let's burn out a csv that can be used to find the imagery for the `r nrow(photos_all)` photos above.
 
 
 ```{r burn1, eval = TRUE}
@@ -646,7 +644,100 @@ lpath_link <- function(dat = NULL){
 
 ```
 
-We can view and download exported csv files [here](https://github.com/NewGraphEnvironment/new_graphiti/tree/main/posts/2024-11-15-bcdata-ortho-historic/exports/). 
+We can view and download exported csv files [here](https://github.com/NewGraphEnvironment/new_graphiti/tree/main/posts/2024-11-15-bcdata-ortho-historic/exports/)
+but really we are perhaps better off using the widget below to get the csv file we need. 
+
+```{r dt2, eval = FALSE}
+
+photos_all |> 
+  dplyr::select(-id) |> 
+  my_dt_table(cols_freeze_left = 0)
+```
+
+## Build a Interactive Dashboard that allows us to Visualize and Download by a Specific Year
+
+Use the filter and slider to see the coverage for photos we have for an individual year then export to excel or csv 
+file with the buttons at the bottom of the table below.
+
+```{r invisible-widget-cap, echo=FALSE, results='asis', eval = FALSE}
+cat(
+  "<table id='tab-widget-cap' style='display:none;'>",
+  "<caption>Interactive widget for visualising and downloading orthoimagery catalogued at https://catalogue.data.gov.bc.ca/dataset/airborne-imagery-historical-index-map-points.</caption>",
+  "<tr><td>Placeholder</td></tr>",
+  "</table>"
+)
+```
+
+
+```{r widget}
+
+# Wrap data frame in SharedData
+sd <- crosstalk::SharedData$new(layers_trimmed$l_photo_centroids |> dplyr::select(-id))
+
+
+# Use SharedData like a dataframe with Crosstalk-enabled widgets
+map3 <- sd |>
+  leaflet(height = 500) |> #height=500, width=780
+  addProviderTiles("Esri.WorldTopoMap", group = "Topo") |>
+  addProviderTiles("Esri.WorldImagery", group = "ESRI Aerial") |>
+  addCircleMarkers(
+    radius = 3,
+    fillColor = "black",
+    color= "#ffffff",
+    stroke = TRUE,
+    fillOpacity = 1.0,
+    weight = 2,
+    opacity = 1.0
+  ) |> 
+  addPolylines(data=layers_trimmed$l_streams,
+               opacity=0.75, 
+               color = 'blue',
+               fillOpacity = 0.75, 
+               weight=2) |> 
+    addPolygons(
+    data = layers_trimmed$aoi, 
+              color = "black", 
+              weight = 1, 
+              smoothFactor = 0.5,
+              opacity = 1.0, 
+              fillOpacity = 0
+              ) |> 
+  addLayersControl(
+    baseGroups = c(
+      "Esri.DeLorme",
+      "ESRI Aerial"),
+    options = layersControlOptions(collapsed = F)) |> 
+  leaflet.extras::addFullscreenControl(position = "bottomright") |> 
+  leaflet::addScaleBar(position = "bottomleft")
+
+
+widgets <- crosstalk::bscols(
+  widths = c(3, 9),
+  crosstalk::filter_checkbox(
+    id = "label",
+    label =  "Media Type",
+    sharedData = sd,
+    group =  ~media
+  ),
+  crosstalk::filter_slider(
+    id = "label",
+    label = "Year",
+    sharedData = sd,
+    column = ~photo_year,
+    round = 0
+  )
+)
+
+htmltools::browsable(
+  htmltools::tagList(
+    widgets,
+    map3,
+    sd |> my_dt_table(page_length = 5)
+  )
+)
+```
+
+
 
 
 
