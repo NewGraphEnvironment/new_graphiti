@@ -389,22 +389,22 @@ layers_trimmed$l_imagery_hist_pnts |>
   dplyr::mutate(
     kml_url = ngr::ngr_str_link_url(
       url_base = "https://openmaps.gov.bc.ca/flight_indices/kml/large_scale", 
-      url_resource = fs::path(basename(fs::path_dir(kml_url)), basename(kml_url))
+      url_resource = 
+        fs::path_rel(
+          kml_url, start = "https://openmaps.gov.bc.ca/flight_indices/kml/large_scale"
+        )
     ),
     pdf_url = ngr::ngr_str_link_url(
       url_base = "https://openmaps.gov.bc.ca/flight_indices/pdf", 
-      url_resource = fs::path(
-        ngr::ngr_str_dir_from_path(pdf_url, levels = 3), 
-        ngr::ngr_str_dir_from_path(pdf_url, levels = 2),
-        ngr::ngr_str_dir_from_path(pdf_url, levels = 1),
-        basename(pdf_url))
+      url_resource = 
+        fs::path_rel(pdf_url, start = "https://openmaps.gov.bc.ca/flight_indices/pdf")
     )
   )|> 
   dplyr::select(-id) |> 
   sf::st_drop_geometry() |> 
   knitr::kable(
     escape = FALSE,
-  caption = my_caption
+    caption = my_caption
   )
 
 
@@ -949,6 +949,14 @@ map <- map |>
               opacity = 1.0, 
               fillOpacity = 0
               ) |> 
+  # leaflet::addPolygons(
+  #   data = layers_trimmed$aoi_raw, 
+  #             color = "yellow", 
+  #             weight = 1, 
+  #             smoothFactor = 0.5,
+  #             opacity = 1.0, 
+  #             fillOpacity = 0
+  #             ) |> 
   leaflet::addLayersControl(
     baseGroups = c(
       "Esri.DeLorme",
@@ -980,15 +988,33 @@ cat(
 ```{r widget}
 
 # Wrap data frame in SharedData
-sd <- crosstalk::SharedData$new(layers_trimmed$l_photo_centroids |> dplyr::select(-id))
+sd <- crosstalk::SharedData$new(
+  layers_trimmed$l_photo_centroids |> 
+    dplyr::mutate(
+      thumbnail_image_url = ngr::ngr_str_link_url(
+        url_base = "https://openmaps.gov.bc.ca/thumbs", 
+        url_resource = 
+          fs::path_rel(
+            thumbnail_image_url, start = "https://openmaps.gov.bc.ca/thumbs"
+          )
+      ),
+      flight_log_url = ngr::ngr_str_link_url(
+        url_base = "https://openmaps.gov.bc.ca/thumbs/logbooks/", 
+        url_resource = 
+          fs::path_rel(flight_log_url, start = "https://openmaps.gov.bc.ca/thumbs/logbooks/")
+      )
+    )|> 
+    
+    dplyr::select(-id)
+)
 
 
 # Use SharedData like a dataframe with Crosstalk-enabled widgets
 map3 <- sd |>
-  leaflet(height = 500) |> #height=500, width=780
-  addProviderTiles("Esri.WorldTopoMap", group = "Topo") |>
-  addProviderTiles("Esri.WorldImagery", group = "ESRI Aerial") |>
-  addCircleMarkers(
+  leaflet::leaflet(height = 500) |> #height=500, width=780
+  leaflet::addProviderTiles("Esri.WorldTopoMap", group = "Topo") |>
+  leaflet::addProviderTiles("Esri.WorldImagery", group = "ESRI Aerial") |>
+  leaflet::addCircleMarkers(
     radius = 3,
     fillColor = "black",
     color= "#ffffff",
@@ -997,12 +1023,12 @@ map3 <- sd |>
     weight = 2,
     opacity = 1.0
   ) |>
-  addPolylines(data=layers_trimmed$l_streams,
+  leaflet::addPolylines(data=layers_trimmed$l_streams,
                opacity=0.75, 
                color = 'blue',
                fillOpacity = 0.75, 
                weight=2) |> 
-    addPolygons(
+    leaflet::addPolygons(
     data = layers_trimmed$aoi, 
               color = "black", 
               weight = 1, 
@@ -1010,11 +1036,11 @@ map3 <- sd |>
               opacity = 1.0, 
               fillOpacity = 0
               ) |> 
-  addLayersControl(
+  leaflet::addLayersControl(
     baseGroups = c(
       "Esri.DeLorme",
       "ESRI Aerial"),
-    options = layersControlOptions(collapsed = F)) |> 
+    options = leaflet::layersControlOptions(collapsed = F)) |> 
   leaflet.extras::addFullscreenControl(position = "bottomright") |> 
   leaflet::addScaleBar(position = "bottomleft")
 
@@ -1040,7 +1066,7 @@ htmltools::browsable(
   htmltools::tagList(
     widgets,
     map3,
-    sd |> my_dt_table(page_length = 5)
+    sd |> my_dt_table(page_length = 5, escape = FALSE)
   )
 )
 ```
