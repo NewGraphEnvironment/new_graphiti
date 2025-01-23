@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Interactive COG Viewer with Layers</title>
+  <title>V1b3 SpAt14L</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
@@ -33,7 +33,7 @@
 
   <!-- Explicitly link to the favicon -->
   <!-- Browsers automatically check for favicon.ico in the root, but this makes it explicit -->
-  <link rel="icon" href="http://new-graphiti.s3.amazonaws.com/favicon.ico" type="image/x-icon">
+  <!-- <link rel="icon" href="http://new-graphiti.s3.amazonaws.com/favicon.ico" type="image/x-icon"> -->
 </head>
 <body>
   <div id="map"></div>
@@ -131,7 +131,7 @@
 
     logoControl.onAdd = function () {
       const div = L.DomUtil.create('div', 'logo-control');
-      div.innerHTML = `<a href="https://www.newgraphenvironment.com" target="_blank">
+      div.innerHTML = `<a href="https://www.newgraphenvironment.com/new_graphiti/" target="_blank">
                          <img src="https://github.com/NewGraphEnvironment/new_graphiti/blob/main/assets/logos/logo_newgraph/WHITE/PNG/nge-icon_white.png?raw=true" alt="NewGraph Logo">
                        </a>`;
       return div;
