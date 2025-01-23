@@ -20,9 +20,7 @@ Journey here to set up a [TiTiler](https://github.com/developmentseed/titiler) o
 This is a continuation of a past post that you can find [here](https://www.newgraphenvironment.com/new_graphiti/posts/2024-09-21-aws-cors-cog-leaflet/).
 Thanks to ChatGPT for the help. Image by ChatGPT.
 
-We already have a bucket set up to serve our COG imagery files and we have crafted a simple `index.HTML` file on `AWS` to point to 
-a COG file and serve it out in a basic leaflet map. A little bit of complexity arrives because we want a tile service 
-in order for these images to be able to be rendered in the browser using server side rendering. For that we need something like `TiTiler` running 
+We want a tile service to render Cloud Optimized Geotiffs (Cogs) in the browser using server side rendering. For that we need something like `TiTiler` running 
 on a cloud instance. So we're gonna document that set up on AWS here so we can find it again.
 
 To enable scalability and simplify deployment we will use [`AWS Elastic Beanstalk`](https://aws.amazon.com/elasticbeanstalk/?gclid=Cj0KCQiA4rK8BhD7ARIsAFe5LXIss1fnBHnOiluC0QJbB7A6W4AHZ-4hnYtJsmdcfZcLwHWWCjjLdC0aAheVEALw_wcB&trk=420d780f-52e0-462f-8a22-617780037847&sc_channel=ps&ef_id=Cj0KCQiA4rK8BhD7ARIsAFe5LXIss1fnBHnOiluC0QJbB7A6W4AHZ-4hnYtJsmdcfZcLwHWWCjjLdC0aAheVEALw_wcB:G:s&s_kwcid=AL!4422!3!651612435557!e!!g!!elastic%20beanstalk!19836375244!150076953787) (`eb`). We are on a mac so first thing we do is:
@@ -240,28 +238,27 @@ Once that is completed we can find our Elastic Beanstalk environment's `CNAME` w
 
 
 
-Its `CNAME: titiler-env.eba-s4jhubvr.us-west-2.elasticbeanstalk.com`
+
 
     
 Here is what our setup file structure looks like.
 
 ```{r}
+
+# Its `CNAME: titiler-env.eba-s4jhubvr.us-west-2.elasticbeanstalk.com`
 fs::dir_tree("/Users/airvine/Projects/repo/elastic-beanstalk", recurse = TRUE, all = TRUE)
 
 ```
 
 
-So we are going to add this to the index file that we serve in another AWS bucket to serve out our leaflet map
-with the COG.
+We built a `viewer.html` file hosted on AWS that dynamically renders COGs that we feed to it via the `titiler` tile server. 
 
-    'http://titiler-env.eba-s4jhubvr.us-west-2.elasticbeanstalk.com/cog/tiles/{z}/{x}/{y}.png?url=https://23cog.s3.amazonaws.com/20210906lampreymoricetribv220230317.tif'
     
-    
-Geez... Here it is and can be seen in alll its fullscreen glory [here](http://23cog.s3-website-us-west-2.amazonaws.com/test-viewer/)!!!
+Check it out here in its full screen glory [here](http://23cog.s3.amazonaws.com/viewer.html?cog=http://23cog.s3.amazonaws.com/20210906lampreymoricetribv220230317.tif)!!!
 
-<iframe src="http://23cog.s3-website-us-west-2.amazonaws.com/test-viewer/" 
+
+<iframe src="http://23cog.s3.amazonaws.com/viewer.html?cog=http://23cog.s3.amazonaws.com/20210906lampreymoricetribv220230317.tif" 
         style="border: none;" 
         width="100%" 
         height="600">
 </iframe>
-
