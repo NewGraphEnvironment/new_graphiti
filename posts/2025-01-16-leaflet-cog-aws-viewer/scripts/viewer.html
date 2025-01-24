@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>V1b3 SpAt14L</title>
+  <title>v1be sP4t1Al</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
@@ -142,12 +142,30 @@
     // Add a custom control with the clickable link
     const linkControl = L.control({ position: 'topright' });
 
+    // Dynamically construct the download URL to point to the S3 website
+    const originalBaseUrl = new URL(cogUrl).origin;
+    const s3WebsiteBaseUrl = originalBaseUrl.replace(
+      "s3.amazonaws.com",
+      "s3-website-us-west-2.amazonaws.com"
+    );
+    const dlcogUrl = cogUrl.replace(originalBaseUrl, s3WebsiteBaseUrl);
+
     linkControl.onAdd = function () {
       const div = L.DomUtil.create('div', 'cog-link-control');
-      div.innerHTML = `<a href="${cogUrl}"
-                          target="_blank" style="text-decoration: none; color: white; font-weight: bold;">
-                          Click Here to Download Imagery
-                        </a>`;
+      try {
+        console.log("Download COG URL:", dlcogUrl);
+
+        // Create the download link
+        div.innerHTML = `<a href="${dlcogUrl}"
+                            target="_blank"
+                            style="text-decoration: none; color: lime; font-weight: bold; background: rgba(0, 0, 0, 0.6); padding: 10px; border-radius: 5px;">
+                            Click Here to Download Imagery
+                          </a>`;
+      } catch (error) {
+        console.error("Error processing the download link:", error);
+        div.innerHTML = `<p style="color: red; font-weight: bold;">Invalid Download URL</p>`;
+      }
+
       return div;
     };
 
