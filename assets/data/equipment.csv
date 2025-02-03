@@ -13,11 +13,11 @@ Hat,x,,x,,,fish passage,,,,,,,
 first aid kit personal,x,,x,,,,,,,,,"Can pick up simple kit at places like parmasave, Valhalla Pure , etc.  I add the odd thing over the years like power bar, lighter, emergency blanket, others?",
 Waders,x,,x,,,fish passage,,,,,x,,
 Wading Boots  (Rubber-soled only),x,,x,,,fish passage,,,,,x,,
-Extra clothes,x,,,,,fish passage,,,,,,,
+Extra clothes,x,x,,,,fish passage,,,,,,,
 rain gear,x,,,,,,,,,,,,Light weight jacket used commonly even for dew in mornings. Pretty rare you would want pants due to waders
 Ski poles,x,,x,,,fish passage,,,,,,,
-water,x,,x,all,,fish passage,,,,,,,
-food,x,,x,all,,fish passage,,,,,,,
+water,x,x,x,all,,fish passage,,,,,,,
+food,x,x,x,all,,fish passage,,,,,,,
 gloves work,x,,x,,,fish passage,,,,,,Getting your size might be a challenge but did get a bag of what they call small at canadian tire.  My hands fit in them really tightly though so not sure if they will work…,To save the hands. I wear light weight little work home hardware or can tire cottton/polyester gloves most the time (I buy lots when they have the cheap florescent yellow jobies . Some people don't like to wear them but I do.  When it gets colder the gas station themal cotton/poly work gloves are good. 
 glasses safety,,,x,,,fish passage,construction,,,,,,I wear shades a lot. Safety glasses in first aid kit (prob don't really need)
 headlamp,x,,x,,,,,,,,,,Nice to have in your personal kit/vest for when it gets late.
@@ -43,9 +43,9 @@ Background Documents,,,x,,,fish passage,,,,,,,
 radio handheld,,,x,,,fish passage,,,,,,,
 radio truck,,x,x,,,,,,,,,,
 radio chargers x 3,,,x,,,,,,,,,,
-Satelite communicator,,,x,,,fish passage,,,,,,,
+Satelite communicator,,x,x,,,fish passage,,,,,,,
 Field Safety Plan,,,x,,,fish passage,,,,,,,
-first aid kit level 1,,,x,,,fish passage,,,,,,,
+first aid kit level 1,,x,x,,,fish passage,,,,,,,
 First Aid binder stocked,,,x,,,fish passage,,,,,,,
 Site Cards / Field Guide,,,,,,fish passage,,,,,,,
 Minnow Traps,,,,,,fish passage,,,,,,,
@@ -101,4 +101,4 @@ Fanny pack,,,,snorkling,,,,,,,,,
 large backpack,,,,,electrofishing,,,,,,,,
 Tow strap,,x,,,,,,,,,,,
 range finder,x,,,,,,,,,,,,Great for long culverts and wide streams. 
-cloth or paper towel,,x,,,,,,,,,,,Good for wipping away condensation on windsheild
+cloth or paper towel,,x,,,,,,,,,,,For wipping away condensation and cleaning the windsheild
