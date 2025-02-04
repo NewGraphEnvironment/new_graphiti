@@ -1,0 +1,157 @@
+---
+title: "CORS for serving of COGs of UAV imagery on AWS with R"
+author: "al"
+date: "2024-09-21"
+date-modified: "2024-09-21"
+categories: [aws, s3, r, paws, s3sf, leaflet, leafem, COG, CORS]
+image: "image.jpg"
+params:
+  repo_owner: "NewGraphEnvironment"
+  repo_name: "new_graphiti"
+  post_dir_name: "aws-storage-permissions"
+format: 
+  html:
+    code-fold: true
+---
+
+Whoa Billy.  Time to host our UAV imagery on AWS and serve it out through leaflet and do dank moves like put before
+after images on slippy maps next to each other for world peace. Ha. Well that is a bit dramatic but hey. Still pretty
+cool.  
+
+First thing is to convert the image to a cog and sync it up to a bucket. Not doing that here.  Will do soon though. What we do here is - after we are sure there are public permissions allowed to the bucket but we also need to deal with big bad CORS.  We can set a viewing [Cross-origin resource sharing (CORS)](https://docs.aws.amazon.com/AmazonS3/latest/userguide/enabling-cors-examples.html?icmpid=docs_amazons3_console). "CORS defines a way for client web applications that are loaded in one domain to interact with resources in a different domain". This is done with the following JSON.
+
+```
+[
+    {
+        "AllowedHeaders": [
+            "*"
+        ],
+        "AllowedMethods": [
+            "GET"
+        ],
+        "AllowedOrigins": [
+            "*"
+        ],
+        "ExposeHeaders": [
+            "x-amz-server-side-encryption",
+            "x-amz-request-id",
+            "x-amz-id-2"
+        ],
+        "MaxAgeSeconds": 3000
+    }
+]
+```
+
+We went the daft way here and just copied and pasted this into the `CORS` section of our bucket in the console but we
+should be able to use the `paws` package and the `s3_put_bucket_cors` function (I would think).  We are going to leave 
+that for another day.
+
+```{r ld-pkgs}
+library(paws)
+library(s3fs)
+library(leaflet)
+library(leafem)
+
+```
+
+List your buckets kid.
+
+```{r bucket-ls}
+s3 <- paws::s3()
+buckets <- s3$list_buckets()
+purrr::map_chr(buckets$Buckets, "Name")
+```
+
+
+```{r}
+s3fs::s3_dir_ls(refresh = TRUE) 
+bucket_path <- s3fs::s3_path("23cog")
+
+```
+
+```{r eval= F}
+# too much info
+s3fs::s3_dir_tree(bucket_path)
+```
+
+Now list em with full paths
+```{r}
+# full paths
+s3_dir_ls(bucket_path)
+```
+
+Biuld a functshi to give us the actual https url. Sure there is a function somewhere already to do this but couldn't find it.
+```{r}
+
+# Define your S3 path
+s3_path <-  "s3://23cog/20210906lampreymoricetribv220230317.tif"
+
+s3_path_to_https <- function(s3_path) {
+  # Remove the 's3://' prefix
+  path_without_prefix <- sub("^s3://", "", s3_path)
+  
+  # Split the path into bucket and key
+  parts <- strsplit(path_without_prefix, "/", fixed = TRUE)[[1]]
+  bucket_name <- parts[1]
+  object_key <- paste(parts[-1], collapse = "/")
+  
+  # Construct the HTTPS URL
+  https_url <- sprintf("https://%s.s3.amazonaws.com/%s", bucket_name, object_key)
+  return(https_url)
+}
+
+url <- s3_path_to_https(s3_path)
+print(url)
+```
+
+
+Since we already have some valid COGs up on AWS we will link to one to be sure it works. 
+
+```{r}
+  leaflet::leaflet() |>
+    leaflet::addTiles() |>
+    leafem:::addCOG(
+      url = url
+      , group = "COG"
+      , resolution = 512
+      , autozoom = TRUE
+    )
+```
+
+Dope.
+
+
+When we work with the `paws` package - when we want to get help we use `?s3` and navigate in from there. This next section doesn't work yet so we turn eval = F and get on with our lives.  Would like to activate this policy from R but can't seem to pull it of yet. To be continued - maybe.
+
+```{r policy, eval=FALSE}
+
+my_bucket_name = "23cog" 
+
+# Define the CORS policy as a list
+my_policy <- list(
+    list(
+        AllowedHeaders = list("*"),  # Must be a list
+        AllowedMethods = list("GET"),  # Must be a list
+        AllowedOrigins = list("*"),  # Must be a list
+        ExposeHeaders = list(
+            "x-amz-server-side-encryption",
+            "x-amz-request-id",
+            "x-amz-id-2"
+        ),  # Must be a list
+        MaxAgeSeconds = 3000  # Must be a number
+    )
+)
+
+
+# Convert the policy list to a pretty JSON format
+my_policy_json <- jsonlite::toJSON(my_policy, pretty = TRUE, auto_unbox = TRUE)
+
+
+# Set the CORS configuration directly using the list
+paws::s3()$put_bucket_cors(
+    Bucket = my_bucket_name,
+    CORSConfiguration = my_policy_json  # Pass the list of rules directly
+)
+
+```
+

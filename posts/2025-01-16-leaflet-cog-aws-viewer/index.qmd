@@ -1,0 +1,264 @@
+---
+title: "Setting up TiTiler to serve COGs of UAV imagery on AWS with leaflet and Elastic Beanstalk"
+author: "al"
+date: "2025-01-17"
+date-modified: "2025-01-19"
+categories: [aws, s3, s3sf, leaflet, COG, titiler]
+image: "image.jpg"
+params:
+  repo_owner: "NewGraphEnvironment"
+  repo_name: "new_graphiti"
+format: 
+  html:
+    code-fold: true
+---
+
+Whoa Bobby-Joe.  
+
+Journey here to set up a [TiTiler](https://github.com/developmentseed/titiler) on a remote server. 
+
+This is a continuation of a past post that you can find [here](https://www.newgraphenvironment.com/new_graphiti/posts/2024-09-21-aws-cors-cog-leaflet/).
+Thanks to ChatGPT for the help. Image by ChatGPT.
+
+We want a tile service to render Cloud Optimized Geotiffs (Cogs) in the browser using server side rendering. For that we need something like `TiTiler` running 
+on a cloud instance. So we're gonna document that set up on AWS here so we can find it again.
+
+To enable scalability and simplify deployment we will use [`AWS Elastic Beanstalk`](https://aws.amazon.com/elasticbeanstalk/?gclid=Cj0KCQiA4rK8BhD7ARIsAFe5LXIss1fnBHnOiluC0QJbB7A6W4AHZ-4hnYtJsmdcfZcLwHWWCjjLdC0aAheVEALw_wcB&trk=420d780f-52e0-462f-8a22-617780037847&sc_channel=ps&ef_id=Cj0KCQiA4rK8BhD7ARIsAFe5LXIss1fnBHnOiluC0QJbB7A6W4AHZ-4hnYtJsmdcfZcLwHWWCjjLdC0aAheVEALw_wcB:G:s&s_kwcid=AL!4422!3!651612435557!e!!g!!elastic%20beanstalk!19836375244!150076953787) (`eb`). We are on a mac so first thing we do is:
+
+    brew install a WSEBCLI. 
+    
+    
+Because we are already set up with credentials through environmental variables back when we set up [`awscli`](https://formulae.brew.sh/formula/awscli) `eb`
+will link to those credentials automatically on initialization. 
+
+So next we need to identify a launch template for the `eb` environment as per these [docs](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environments-cfg-autoscaling-launch-templates.html)
+
+First thing is to find the latest Amazon Linux 2 AMI ID:
+
+    aws ssm get-parameters --names "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64" --region us-west-2
+    
+which gives us
+
+```
+{
+    "Parameters": [
+        {
+            "Name": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64",
+            "Type": "String",
+            "Value": "ami-093a4ad9a8cc370f4",
+            "Version": 105,
+            "LastModifiedDate": "2025-01-16T16:44:38.939000-08:00",
+            "ARN": "arn:aws:ssm:us-west-2::parameter/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64",
+            "DataType": "text"
+        }
+    ],
+    "InvalidParameters": []
+}
+```
+
+So then we do the long way and first create a launch template with the following cmd:
+
+    aws ec2 create-launch-template --launch-template-name TitilerTemplate \
+    --launch-template-data '{
+        "ImageId": "ami-093a4ad9a8cc370f4",
+        "InstanceType": "t3.micro"
+    }'
+    
+This gives us back this which we use to get our LaunchTemplateId:
+
+```
+{
+    "LaunchTemplate": {
+        "LaunchTemplateId": "lt-049eff4ed7a9490f8",
+        "LaunchTemplateName": "TitilerTemplate",
+        "CreateTime": "2025-01-17T23:37:06+00:00",
+        "CreatedBy": "arn:aws:iam::{my-secret-account-id}:user/{my-secet-username}",
+        "DefaultVersionNumber": 1,
+        "LatestVersionNumber": 1
+    }
+}
+```
+
+
+The default security group is likely not appropriate for a public-facing tile server because it might:
+
+  - Allow broad internal access within your AWS account, which is unnecessary.
+  - Restrict external traffic, preventing public access to your tiles.
+
+For a public-facing tile server like Titiler, the security group should:
+
+  - Allow Inbound HTTP/HTTPS Traffic:
+  - Open port 80 (HTTP) and port 443 (HTTPS) to the world (0.0.0.0/0).
+  - Restrict Unnecessary Access:
+  - Limit other inbound traffic (e.g., SSH or internal AWS traffic) unless explicitly needed.
+  - Create a Custom Security Group
+
+Here’s how to set up a security group specifically for your tile server:
+
+Create the Security Group:
+
+
+    aws ec2 create-security-group --group-name titilersecuritygroup \
+        --description "Security group for Titiler tile server"
+    
+Allow Public HTTP/HTTPS Access:
+
+
+    aws ec2 authorize-security-group-ingress --group-name titilersecuritygroup \
+        --protocol tcp --port 80 --cidr 0.0.0.0/0
+    aws ec2 authorize-security-group-ingress --group-name titilersecuritygroup \
+        --protocol tcp --port 443 --cidr 0.0.0.0/0
+
+Get the Security Group ID:
+
+
+    aws ec2 describe-security-groups --group-names titilersecuritygroup --query "SecurityGroups[0].GroupId" --output text
+
+
+Update the Launch Template: Add the Security Group ID to the Launch Template using its LaunchTemplateId:
+
+
+Then we make a litle `launchtemplate.config` file and put it in our main project directory `elastic-beanstock` in a 
+`.ebextensions` directory.  It looks like this with our `SecurityGroups` id added as per our last query:
+
+```
+option_settings:
+  aws:autoscaling:launchconfiguration:
+    SecurityGroups: sg-xxxxxxxxxxxxxxxxxx
+    InstanceType: t3.micro
+    RootVolumeType: gp3
+    MonitoringInterval: "1 minute"
+    DisableIMDSv1: true
+    IamInstanceProfile: "aws-elasticbeanstalk-ec2-role"
+```
+
+In order to have an easy launch of `Titiler` we make a `Dockerrun.aws.json` file to go in our main `elastic-beanstock` roject 
+directory we have created to do this work.  The `Dockerrun.aws.json` file looks like this:
+
+```
+{
+    "AWSEBDockerrunVersion": "1",
+    "Image": {
+        "Name": "developmentseed/titiler",
+        "Update": "true"
+    },
+    "Ports": [
+        {
+            "ContainerPort": 80
+        }
+    ]
+}
+```
+
+Then we create a `trust-policy.json` in our main `elastic-beanstock` directory to allow `eb` to:
+
+ - Launch and terminate EC2 instances.
+ - Create and manage security groups.
+ - Configure Auto Scaling.
+ - Set up Elastic Load Balancers.
+ - Access S3 buckets for deployments.
+ 
+ It looks like this:
+ 
+ ```
+ {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "elasticbeanstalk.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+        }
+    ]
+}
+```
+
+Now we attach the policy 
+
+    aws iam attach-role-policy --role-name aws-elasticbeanstalk-service-role \
+    --policy-arn arn:aws:iam::aws:policy/AmazonEC2FullAccess
+
+To be sure - we verify the policy is attached:
+
+    aws iam list-attached-role-policies --role-name aws-elasticbeanstalk-service-role
+
+You should see AmazonEC2FullAccess in the output.
+
+Verify the VPC. A VPC (Virtual Private Cloud) is a private, isolated network within AWS where you can launch and manage 
+AWS resources like EC2 instances, databases, and load balancers. Run this command to see the route tables for each subnet 
+and determine if they are public:
+
+    aws ec2 describe-vpcs --query "Vpcs[?IsDefault].VpcId" --region us-west-2 --output text
+    
+
+Next it gets weird - Find the Default Route Table with a query that includes our uniqye `VpcId` which we recieved from
+our last query:
+
+    aws ec2 describe-route-tables --filters Name=vpc-id,Values=vpc-XXXXXXXXXXXXX --region us-west-2
+
+
+Because the default route table is connected to an Internet Gateway - subnets need to be explicitly associated with this route table.
+Look for entries with "DestinationCidrBlock": "0.0.0.0/0" and "GatewayId": "igw-xxxxxxxx" in the output. 
+These indicate that the subnet is public.; those without are private:
+
+    aws ec2 associate-route-table --route-table-id rtb-xx --subnet-id subnet-xxx
+    aws ec2 associate-route-table --route-table-id rtb-xx --subnet-id subnet-xx
+    aws ec2 associate-route-table --route-table-id rtb-x --subnet-id subnet-x
+    aws ec2 associate-route-table --route-table-id rtb-xx --subnet-id subnet-xx
+
+Update your `VPCId` in your `.ebextensions/launchtemplate.config`.
+Also Ensure your configuration file includes the associated subnets:
+
+```
+option_settings:
+  aws:autoscaling:launchconfiguration:
+    SecurityGroups: sg-xxxxx
+    InstanceType: t3.micro
+    RootVolumeType: gp3
+    MonitoringInterval: "1 minute"
+    DisableIMDSv1: true
+    IamInstanceProfile: "aws-elasticbeanstalk-ec2-role"
+  aws:ec2:vpc:
+    VPCId: vpc-xxx
+    Subnets: subnet-xx,subnet-xx,subnet-xx,subnet-xx
+
+```
+
+
+Now we create the env:
+
+    eb create titiler-env 
+
+    
+Once that is completed we can find our Elastic Beanstalk environment's `CNAME` with:
+
+    eb status
+
+
+
+
+
+    
+Here is what our setup file structure looks like.
+
+```{r}
+
+# Its `CNAME: titiler-env.eba-s4jhubvr.us-west-2.elasticbeanstalk.com`
+fs::dir_tree("/Users/airvine/Projects/repo/elastic-beanstalk", recurse = TRUE, all = TRUE)
+
+```
+
+
+We built a `viewer.html` file hosted on AWS that dynamically renders COGs that we feed to it via the `titiler` tile server. 
+
+    
+Check it out here in its full screen glory [here](http://23cog.s3.amazonaws.com/viewer.html?cog=http://23cog.s3.amazonaws.com/20210906lampreymoricetribv220230317.tif)!!!
+
+
+<iframe src="http://23cog.s3.amazonaws.com/viewer.html?cog=http://23cog.s3.amazonaws.com/20210906lampreymoricetribv220230317.tif" 
+        style="border: none;" 
+        width="100%" 
+        height="600">
+</iframe>
