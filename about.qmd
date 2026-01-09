@@ -1,8 +1,8 @@
 ---
 title: "rws"
-image: assets/surf_crash1.jpeg
+image: assets/gif.gif
 about:
-  template: jolla
+  template: marquee
   links:
 
     - icon: linkedin
@@ -14,4 +14,6 @@ about:
 
 ---
 
+::: {style="text-align: center; font-size: 125%;"}
 raNdom workish stufF
+:::
