@@ -137,7 +137,7 @@
     "href": "posts/2026-01-08-stac-ortho-mosaics/index.html#before-and-after-comparison",
     "title": "Sentinel-2 Ortho Mosaics with STAC and gdalcubes",
     "section": "Before and After Comparison",
-    "text": "Before and After Comparison\nComparing the earliest and most recent imagery side by side shows what has changed over the decade.\n\n\nCode\nr_2016 &lt;- rasters[[\"2016\"]]\nr_2025 &lt;- rasters[[\"2025\"]]\n\npar(mfrow = c(1, 2))\nterra::plotRGB(r_2016, r = 3, g = 2, b = 1, stretch = \"lin\", main = \"2016\")\nterra::plotRGB(r_2025, r = 3, g = 2, b = 1, stretch = \"lin\", main = \"2025\")\npar(mfrow = c(1, 1))\n\n\n\n\n\n\n\n\nFigure 3: Comparison of 2016 and 2025 Sentinel-2 composites."
+    "text": "Before and After Comparison\nComparing the earliest and most recent imagery side by side shows what has changed over amost a decade.\n\n\nCode\nr_2017 &lt;- rasters[[\"2017\"]]\nr_2025 &lt;- rasters[[\"2025\"]]\n\npar(mfrow = c(1, 2))\nterra::plotRGB(r_2017, r = 3, g = 2, b = 1, stretch = \"lin\", main = \"2017\")\nterra::plotRGB(r_2025, r = 3, g = 2, b = 1, stretch = \"lin\", main = \"2025\")\npar(mfrow = c(1, 1))\n\n\n\n\n\n\n\n\nFigure 3: Comparison of 2017 and 2025 Sentinel-2 composites."
   },
   {
     "objectID": "posts/2026-01-08-stac-ortho-mosaics/index.html#summary",
