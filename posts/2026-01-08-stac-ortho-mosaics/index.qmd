@@ -15,7 +15,7 @@ format:
     code-fold: true
 ---
 
-Tracking how land cover changes over time helps us understand ecosystem health and guides conservation and restoration work. Satellite imagery makes this possible at scales that would be impossible to survey on foot. Aerial imagery from airplanes is higher resolution and better for detailed work, but satellite imagery is free and easily available. Sentinel-2 data only goes back to 2015, and before that most available products are lower resolution (30m rather than 10m).
+Tracking how land cover and stream morphology changes over time helps us understand ecosystem health and guides conservation and restoration work. These changes are particularly relevant for aquatic system health in floodplain and riparian areas. Satellite imagery makes this tracking possible at scales that would be impossible to survey on foot. Although aerial imagery from airplanes is higher resolution and better for detailed work, satellite imagery is free and often easily available. Sentinel-2 data only goes back to 2015, and before that most available products are lower resolution (30m rather than 10m).
 
 Here we generate annual orthomosaic composites from Sentinel-2 imagery using STAC (SpatioTemporal Asset Catalog)
 and `gdalcubes`. We query Microsoft's Planetary Computer for cloud-free summer imagery from 2016 to 2025,
@@ -247,14 +247,14 @@ map
 
 ## Before and After Comparison
 
-Comparing the earliest and most recent imagery side by side shows what has changed over the decade.
+Comparing the earliest and most recent imagery side by side shows what has changed over amost a decade.
 
-```{r fig-comparison, fig.cap="Comparison of 2016 and 2025 Sentinel-2 composites.", fig.width=10, fig.height=5}
-r_2016 <- rasters[["2016"]]
+```{r fig-comparison, fig.cap="Comparison of 2017 and 2025 Sentinel-2 composites.", fig.width=10, fig.height=5}
+r_2017 <- rasters[["2017"]]
 r_2025 <- rasters[["2025"]]
 
 par(mfrow = c(1, 2))
-terra::plotRGB(r_2016, r = 3, g = 2, b = 1, stretch = "lin", main = "2016")
+terra::plotRGB(r_2017, r = 3, g = 2, b = 1, stretch = "lin", main = "2017")
 terra::plotRGB(r_2025, r = 3, g = 2, b = 1, stretch = "lin", main = "2025")
 par(mfrow = c(1, 1))
 ```
