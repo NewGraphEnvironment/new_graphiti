@@ -1,5 +1,6 @@
 ---
 title: "Cleaning up bib files flexibly with Zotero and R"
+draft: true
 author: "al"
 date: "2024-05-27"
 date-modified: "`r format(Sys.time(), '%Y-%m-%d')`"

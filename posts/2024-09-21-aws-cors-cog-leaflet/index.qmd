@@ -1,5 +1,6 @@
 ---
 title: "CORS for serving of COGs of UAV imagery on AWS with R"
+draft: true
 author: "al"
 date: "2024-09-21"
 date-modified: "2024-09-21"

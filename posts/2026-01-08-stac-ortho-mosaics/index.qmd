@@ -10,6 +10,7 @@ params:
   repo_name: "new_graphiti"
   post_name: "2026-01-08-stac-ortho-mosaics"
   update_gis: FALSE
+bibliography: "`r rbbt::bbt_write_bib('references.bib', overwrite = TRUE)`"
 format:
   html:
     code-fold: true
@@ -17,8 +18,8 @@ format:
 
 Tracking how land cover and stream morphology changes over time helps us understand ecosystem health and guides conservation and restoration work. These changes are particularly relevant for aquatic system health in floodplain and riparian areas. Satellite imagery makes this tracking possible at scales that would be impossible to survey on foot. Although aerial imagery from airplanes is higher resolution and better for detailed work, satellite imagery is free and often easily available. Sentinel-2 data only goes back to 2015, and before that most available products are lower resolution (30m rather than 10m).
 
-Here we generate annual orthomosaic composites from Sentinel-2 imagery using STAC (SpatioTemporal Asset Catalog)
-and `gdalcubes`. We query Microsoft's Planetary Computer for cloud-free summer imagery from 2016 to 2025,
+Here we generate annual orthomosaic composites from Sentinel-2 imagery using STAC [@simoes_etal2021Rstacpackage]
+and `gdalcubes` [@appel_pebesma2019OnDemandProcessing]. We query Microsoft's Planetary Computer for cloud-free summer imagery from 2016 to 2025,
 create median composites for each year, and visualize the results in an interactive leaflet map.
 
 ```{r setup, include=FALSE}
@@ -36,6 +37,7 @@ library(fs)
 library(purrr)
 library(dplyr)
 library(here)
+library(magick)
 ```
 
 ```{r params}
@@ -245,28 +247,57 @@ map <- map |>
 map
 ```
 
-## Before and After Comparison
+## Time Series Animation
 
-Comparing the earliest and most recent imagery side by side shows what has changed over amost a decade.
+Cycling through each year shows how the landscape has changed over almost a decade.
 
-```{r fig-comparison, fig.cap="Comparison of 2017 and 2025 Sentinel-2 composites.", fig.width=10, fig.height=5}
-r_2017 <- rasters[["2017"]]
-r_2025 <- rasters[["2025"]]
+```{r fig-animation, fig.cap="Animated time series of Sentinel-2 composites from 2016-2025."}
+# Create temporary PNG for each year
+tmp_dir <- tempdir()
 
-par(mfrow = c(1, 2))
-terra::plotRGB(r_2017, r = 3, g = 2, b = 1, stretch = "lin", main = "2017")
-terra::plotRGB(r_2025, r = 3, g = 2, b = 1, stretch = "lin", main = "2025")
-par(mfrow = c(1, 1))
+img_files <- purrr::map_chr(nc_years, function(year) {
+  r <- rasters[[as.character(year)]]
+  tmp_file <- fs::path(tmp_dir, paste0("frame_", year, ".png"))
+
+  png(tmp_file, width = 800, height = 600)
+  terra::plotRGB(r, r = 3, g = 2, b = 1, stretch = "lin", axes = FALSE, mar = 0)
+  dev.off()
+
+  tmp_file
+})
+
+# Read images and add year label to each frame
+frames <- purrr::map(seq_along(img_files), function(i) {
+  magick::image_read(img_files[i]) |>
+    magick::image_annotate(
+      nc_years[i],
+      size = 40,
+      color = "white",
+      strokecolor = "black",
+      gravity = "south",
+      location = "+0+20"
+    )
+}) |>
+  magick::image_join()
+
+animation <- magick::image_animate(frames, fps = 1, dispose = "previous")
+
+# Save gif
+gif_path <- fs::path(path_post, "time_series.gif")
+magick::image_write(animation, gif_path)
+
+# Display
+animation
 ```
 
 ## Summary
 
 This workflow demonstrates how to:
 
-1. Query Sentinel-2 imagery from Microsoft's Planetary Computer using STAC
-
+1. Query Sentinel-2 imagery from Microsoft's Planetary Computer using STAC via `rstac`
 2. Create cloud-free median composites using `gdalcubes`
 3. Visualize multi-temporal imagery in an interactive leaflet map
+4. Generate an animated time series GIF to show change over time
 
 To regenerate the mosaics (e.g., to add new years or change parameters), set `update_gis: TRUE`
 in the YAML header and re-render the document.
