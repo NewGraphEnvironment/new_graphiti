@@ -1,51 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/2025-01-16-leaflet-cog-aws-viewer/index.html</loc>
-    <lastmod>2025-07-21T04:58:45.305Z</lastmod>
-  </url>
-  <url>
-    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/snakecase/index.html</loc>
-    <lastmod>2025-07-21T04:58:45.308Z</lastmod>
-  </url>
-  <url>
-    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/2024-06-30-land-cover/index.html</loc>
-    <lastmod>2025-07-21T04:58:45.236Z</lastmod>
-  </url>
-  <url>
-    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/aws-storage-permissions/index.html</loc>
-    <lastmod>2025-07-21T04:58:45.306Z</lastmod>
-  </url>
-  <url>
-    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/2024-06-19-precipitation/index.html</loc>
-    <lastmod>2025-07-21T04:58:45.220Z</lastmod>
-  </url>
-  <url>
-    <loc>https://NewGraphEnvironment.github.io/new_graphiti/index.html</loc>
-    <lastmod>2025-07-21T04:58:45.208Z</lastmod>
-  </url>
-  <url>
     <loc>https://NewGraphEnvironment.github.io/new_graphiti/about.html</loc>
-    <lastmod>2025-07-21T04:58:45.190Z</lastmod>
-  </url>
-  <url>
-    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/2024-11-15-bcdata-ortho-historic/index.html</loc>
-    <lastmod>2025-07-21T04:58:45.304Z</lastmod>
-  </url>
-  <url>
-    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/aws-storage-processx/index.html</loc>
-    <lastmod>2025-07-21T04:58:45.306Z</lastmod>
+    <lastmod>2026-01-09T00:44:49.112Z</lastmod>
   </url>
   <url>
     <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/logos-equipment/index.html</loc>
-    <lastmod>2025-07-21T04:58:45.306Z</lastmod>
+    <lastmod>2026-01-09T00:44:49.237Z</lastmod>
   </url>
   <url>
-    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/2024-09-21-aws-cors-cog-leaflet/index.html</loc>
-    <lastmod>2025-07-21T04:58:45.248Z</lastmod>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/2024-11-15-bcdata-ortho-historic/index.html</loc>
+    <lastmod>2026-01-09T00:44:49.220Z</lastmod>
+  </url>
+  <url>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/snakecase/index.html</loc>
+    <lastmod>2026-01-09T00:44:49.238Z</lastmod>
+  </url>
+  <url>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/2026-01-08-stac-ortho-mosaics/index.html</loc>
+    <lastmod>2026-01-09T00:44:49.236Z</lastmod>
+  </url>
+  <url>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/2024-06-19-precipitation/index.html</loc>
+    <lastmod>2026-01-09T00:44:49.143Z</lastmod>
+  </url>
+  <url>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/index.html</loc>
+    <lastmod>2026-01-09T00:44:49.132Z</lastmod>
+  </url>
+  <url>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/aws-storage-permissions/index.html</loc>
+    <lastmod>2026-01-09T00:44:49.236Z</lastmod>
+  </url>
+  <url>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/2025-01-16-leaflet-cog-aws-viewer/index.html</loc>
+    <lastmod>2026-01-09T00:44:49.221Z</lastmod>
   </url>
   <url>
     <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/2024-05-27-references-bib-succinct/index.html</loc>
-    <lastmod>2025-07-21T04:58:45.217Z</lastmod>
+    <lastmod>2026-01-09T00:44:49.140Z</lastmod>
+  </url>
+  <url>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/aws-storage-processx/index.html</loc>
+    <lastmod>2026-01-09T00:44:49.237Z</lastmod>
+  </url>
+  <url>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/2024-09-21-aws-cors-cog-leaflet/index.html</loc>
+    <lastmod>2026-01-09T00:44:49.170Z</lastmod>
+  </url>
+  <url>
+    <loc>https://NewGraphEnvironment.github.io/new_graphiti/posts/2024-06-30-land-cover/index.html</loc>
+    <lastmod>2026-01-09T00:44:49.159Z</lastmod>
   </url>
 </urlset>

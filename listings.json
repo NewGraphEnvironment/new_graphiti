@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/2026-01-08-stac-ortho-mosaics/index.html",
       "/posts/2025-01-16-leaflet-cog-aws-viewer/index.html",
       "/posts/2024-11-15-bcdata-ortho-historic/index.html",
       "/posts/2024-09-21-aws-cors-cog-leaflet/index.html",
@@ -10,8 +11,8 @@
       "/posts/2024-05-27-references-bib-succinct/index.html",
       "/posts/aws-storage-permissions/index.html",
       "/posts/aws-storage-processx/index.html",
-      "/posts/logos-equipment/index.html",
-      "/posts/snakecase/index.html"
+      "/posts/snakecase/index.html",
+      "/posts/logos-equipment/index.html"
     ]
   }
 ]
