@@ -95,7 +95,7 @@
     "href": "posts/2026-01-08-stac-ortho-mosaics/index.html",
     "title": "Sentinel-2 Ortho Mosaics with STAC and gdalcubes",
     "section": "",
-    "text": "Generate annual orthomosaic composites from Sentinel-2 imagery using STAC (SpatioTemporal Asset Catalog) and gdalcubes. We query Microsoft’s Planetary Computer for cloud-free summer imagery from 2016 to 2025, create median composites for each year, and visualize the results in an interactive leaflet map.\nCode\nlibrary(gdalcubes)\nlibrary(rstac)\nlibrary(terra)\nlibrary(sf)\nlibrary(leaflet)\nlibrary(leafem)\nlibrary(fs)\nlibrary(purrr)\nlibrary(dplyr)\nlibrary(here)\nCode\npath_post &lt;- fs::path(\n here::here(),\n \"posts\",\n params$post_name\n)\n\ndir_data &lt;- fs::path(path_post, \"data\")\n\n# Ensure data directory exists\nfs::dir_create(dir_data)"
+    "text": "Tracking how land cover changes over time helps us understand ecosystem health and guides conservation and restoration work. Satellite imagery makes this possible at scales that would be impossible to survey on foot. Aerial imagery from airplanes is higher resolution and better for detailed work, but satellite imagery is free and easily available. Sentinel-2 data only goes back to 2015, and before that most available products are lower resolution (30m rather than 10m).\nHere we generate annual orthomosaic composites from Sentinel-2 imagery using STAC (SpatioTemporal Asset Catalog) and gdalcubes. We query Microsoft’s Planetary Computer for cloud-free summer imagery from 2016 to 2025, create median composites for each year, and visualize the results in an interactive leaflet map.\nCode\nlibrary(gdalcubes)\nlibrary(rstac)\nlibrary(terra)\nlibrary(sf)\nlibrary(leaflet)\nlibrary(leafem)\nlibrary(fs)\nlibrary(purrr)\nlibrary(dplyr)\nlibrary(here)\nCode\npath_post &lt;- fs::path(\n here::here(),\n \"posts\",\n params$post_name\n)\n\ndir_data &lt;- fs::path(path_post, \"data\")\n\n# Ensure data directory exists\nfs::dir_create(dir_data)"
   },
   {
     "objectID": "posts/2026-01-08-stac-ortho-mosaics/index.html#define-area-of-interest",
@@ -131,6 +131,13 @@
     "title": "Sentinel-2 Ortho Mosaics with STAC and gdalcubes",
     "section": "Interactive Leaflet Map",
     "text": "Interactive Leaflet Map\nDisplay all annual mosaics as selectable layers in a leaflet map.\n\n\nCode\n# Initialize leaflet map\nmap &lt;- leaflet::leaflet() |&gt;\n leaflet::addProviderTiles(\"Esri.WorldTopoMap\", group = \"Topo\") |&gt;\n leaflet::addProviderTiles(\"Esri.WorldImagery\", group = \"ESRI Aerial\") |&gt;\n leaflet::setView(\n   lng = mean(bbox[c(\"xmin\", \"xmax\")]),\n   lat = mean(bbox[c(\"ymin\", \"ymax\")]),\n   zoom = 14\n )\n\n# Add each year's raster as a layer\nfor (year in nc_years) {\n r &lt;- rasters[[as.character(year)]]\n\n # Add RGB raster layer using leafem\n map &lt;- map |&gt;\n   leafem::addRasterRGB(\n     r,\n     r = 3, g = 2, b = 1,\n     quantiles = c(0.02, 0.98),\n     group = as.character(year)\n   )\n}\n\n# Add layer control\nmap &lt;- map |&gt;\n leaflet::addLayersControl(\n   baseGroups = c(\"Topo\", \"ESRI Aerial\"),\n   overlayGroups = as.character(nc_years),\n   options = leaflet::layersControlOptions(collapsed = FALSE)\n ) |&gt;\n # Hide all years except the most recent by default\n leaflet::hideGroup(as.character(nc_years[nc_years != latest_year])) |&gt;\n leaflet.extras::addFullscreenControl()\n\nmap\n\n\n\n\n\n\n\n\nFigure 2: Interactive map with annual Sentinel-2 composites from 2016-2025."
+  },
+  {
+    "objectID": "posts/2026-01-08-stac-ortho-mosaics/index.html#before-and-after-comparison",
+    "href": "posts/2026-01-08-stac-ortho-mosaics/index.html#before-and-after-comparison",
+    "title": "Sentinel-2 Ortho Mosaics with STAC and gdalcubes",
+    "section": "Before and After Comparison",
+    "text": "Before and After Comparison\nComparing the earliest and most recent imagery side by side shows what has changed over the decade.\n\n\nCode\nr_2016 &lt;- rasters[[\"2016\"]]\nr_2025 &lt;- rasters[[\"2025\"]]\n\npar(mfrow = c(1, 2))\nterra::plotRGB(r_2016, r = 3, g = 2, b = 1, stretch = \"lin\", main = \"2016\")\nterra::plotRGB(r_2025, r = 3, g = 2, b = 1, stretch = \"lin\", main = \"2025\")\npar(mfrow = c(1, 1))\n\n\n\n\n\n\n\n\nFigure 3: Comparison of 2016 and 2025 Sentinel-2 composites."
   },
   {
     "objectID": "posts/2026-01-08-stac-ortho-mosaics/index.html#summary",
