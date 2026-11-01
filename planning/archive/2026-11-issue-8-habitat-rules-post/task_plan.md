@@ -38,7 +38,7 @@ knowledge went public on 2026-11-01, so its documentation can now be linked. A d
 
 - [x] `/code-check branch`
 - [x] Re-read origin (`git log HEAD..origin/main`)
-- [ ] `/planning-archive`, then `/gh-pr-push` with `Fixes #8`, and a check of every issue number the branch introduces
+- [x] `/planning-archive`, then `/gh-pr-push` with `Fixes #8`, and a check of every issue number the branch introduces
 
 ## Owed at the end (reported, done after merge)
 
@@ -51,6 +51,6 @@ knowledge went public on 2026-11-01, so its documentation can now be linked. A d
 - [x] Clean-clone render with no R passes
 - [x] `/code-check` clean over the branch
 - [x] PWF checkboxes match landed work
-- [ ] `/planning-archive` on completion
+- [x] `/planning-archive` on completion
 
 Each change is proved by the render with no R (publish works), the URL probe (links resolve), the read-through (public text) and the served-page fetch after merge (it is live).
