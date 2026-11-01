@@ -38,7 +38,7 @@ col_rule <- c(both = "#1b6ca8", current = "#d95f02", tested = "#1b9e77",
               neither = "#7b3f98")   # plum: apart from the blue, orange and the basemap's green
 lab_rule <- c(both = "Habitat under both rules", current = "Existing rule only",
               tested = "Tuned rule only", neither = "Floodplain, neither rule")
-col_grade <- c("#f7fbff", "#c6dbef", "#6baed6", "#2171b5", "#08306b")
+col_grade <- c("#c6dbef", "#9ecae1", "#6baed6", "#2171b5", "#08306b")
 lab_grade <- c("Low", "", "", "", "High")
 
 # a square window, in EPSG:3005, around a point (m)

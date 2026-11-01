@@ -38,6 +38,9 @@ The draft's own rules carry over: scale and method rather than counts that move 
 - **Five posts publish as empty pages by design:** they carry `draft: true`.
 - **Plan review:** its blocker (no frozen result) was overtaken by the render, which wrote one. Kept: the stale-freeze hazard and the Quarto version gap, both measured above. Declined: removing `engine: knitr`, since the issue asks for `_freeze/` and the render without R passes. The `X % / Y m / Z km` rule in step 1 and the Poisson Consulting credit are as the draft wrote them, and left for the owner to read.
 
+- **Theme check corrected:** searching for Pulse's two hex values missed inline code's own purple (`--bs-code-color: #7d12ba`, found in review round 2). A computed-style scan of five rendered pages (home, about, this post, two older posts) now finds no purple-hued colour on any element. Unused definitions such as Bootstrap's `$indigo` stay in the stylesheet.
+- **Grade map palette:** the owner asked for Low to show rather than look white, so the ramp starts at pale blue `#c6dbef`.
+
 ## Errors Encountered
 
 | Error | Resolution |
