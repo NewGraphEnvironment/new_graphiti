@@ -26,7 +26,8 @@ if (!dir.exists(dir_cat) || !dir.exists(dir_gpkg)) stop("set CAT_DIR and KNOWLED
 dir_out <- Sys.getenv("OUT_DIR", "fig")
 # the ground shows through: story classes at 70 %, the floodplain no rule claims at 45 %
 see <- function(cols) {
-  a <- ifelse(names(cols) %in% "neither", "73", "B3")
+  a <- rep("B3", length(cols))
+  a[names(cols) %in% "neither"] <- "73"
   setNames(paste0(cols, a), names(cols))
 }
 if (!dir.exists(dir_out)) stop("run from the post's directory", call. = FALSE)
