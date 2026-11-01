@@ -15,20 +15,20 @@ knowledge went public on 2026-11-01, so its documentation can now be linked. A d
 - [x] Run the no-argument `/planning-init` setup, since `planning/` does not exist yet
 - [x] Create `posts/2026-11-01-habitat-rules-tested/` with `index.qmd`, `habitat-rules-tested.bib`, and only the images the post uses: seven maps and figures under `fig/`, nine stickers under `fig/hex/`
 - [x] Front matter: title, subtitle, author, `date: "2026-11-01"`, `categories: [r, fish, floodplain, habitat, stac]`, `image: "fig/habitat-rules_scenarios.jpg"`, `params` (`repo_owner`, `repo_name`, `post_name`), `bibliography`, `toc`
-- [ ] Try `habitat-rules_fig-build.R` with its paths re-anchored to the post and `OUT_DIR` in the scratchpad; include it and the Elk script only if they redraw the maps. Committed images stay the draft's
+- [x] Try `habitat-rules_fig-build.R` with its paths re-anchored to the post and `OUT_DIR` in the scratchpad; include it and the Elk script only if they redraw the maps. Committed images stay the draft's
 
 ## Phase 2: Public text
 
-- [ ] Read the whole post, the `.bib` and any included script for client or project names, private repos, hosts and local paths
-- [ ] Open the two Wiley DOIs in a browser
-- [ ] Re-run the URL probe over the post as it now stands, and confirm the links named in the issue are there: knowledge's site and articles, link, fresh, wet, flooded, stac-floodplains-bc
+- [x] Read the whole post, the `.bib` and any included script for client or project names, private repos, hosts and local paths
+- [x] Check the two Wiley DOIs: Crossref resolves both to the cited titles (replaces the browser check; doi.org answers 403 to scripted requests)
+- [x] Re-run the URL probe over the post as it now stands, and confirm the links named in the issue are there: knowledge's site and articles, link, fresh, wet, flooded, stac-floodplains-bc
 
 ## Phase 3: Render and freeze
 
-- [ ] `quarto render posts/2026-11-01-habitat-rules-tested/index.qmd`; no `citation not found` warnings
-- [ ] Commit the post's `_freeze/` output if Quarto writes one, and nothing else under `_freeze/`. If it writes none, remove `engine: knitr`, so nothing asks for R
-- [ ] Render a clean clone with R off the `PATH`, as CI has it
-- [ ] Look at the rendered page in a browser: mermaid chart, paired maps, sticker table, five-column catalogue row, references
+- [x] `quarto render posts/2026-11-01-habitat-rules-tested/index.qmd`; no `citation not found` warnings
+- [x] Commit the post's `_freeze/` output if Quarto writes one, and nothing else under `_freeze/`. If it writes none, remove `engine: knitr`, so nothing asks for R
+- [x] Render a clean clone with R off the `PATH`, as CI has it
+- [x] Look at the rendered page in a browser: mermaid chart, paired maps, sticker table, five-column catalogue row, references
 
 ## Added by the owner, 2026-11-01: hot pink theme
 
@@ -48,7 +48,7 @@ knowledge went public on 2026-11-01, so its documentation can now be linked. A d
 
 ## Validation
 
-- [ ] Clean-clone render with no R passes
+- [x] Clean-clone render with no R passes
 - [ ] `/code-check` clean over the branch
 - [ ] PWF checkboxes match landed work
 - [ ] `/planning-archive` on completion

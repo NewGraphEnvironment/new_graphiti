@@ -27,6 +27,17 @@ The draft's own rules carry over: scale and method rather than counts that move 
 - **Map scripts:** `habitat-rules_fig-build.R` needs the catalogue cache, knowledge's comparison GeoPackages and a PostgreSQL fwapg. The Elk script also needs the `fresh_default` schema. On this machine the GeoPackages are present, and `towns_gns.gpkg` and `elkr_floodplain.gpkg` were not found. No script for `habitat-rules_flow-sources.png` turned up.
 - **Preview script:** the draft's `habitat-rules_post-preview.R` already holds the post's header, and strips `custom.css`. `_quarto.yml` names `custom.css`, the repo has only `custom.scss`, and the last publish still passed.
 
+## Measurements, 2026-11-01
+
+- **Publish without R:** a clean clone rendered with Quarto 1.10.20, the version CI installs, and no `Rscript` on the `PATH`: exit 0. Quarto 1.4.553 wrote `_freeze/posts/2026-11-01-habitat-rules-tested/` for a post with no chunks, so `engine: knitr` stays.
+- **Frozen text goes stale silently:** `freeze: true` serves the frozen text whatever the source says, so any edit to `index.qmd` needs a re-render and a recommit. The freeze `hash` equals `md5` of `index.qmd`, which is the check.
+- **Maps reproduce:** `scripts/habitat-rules_fig-build.R` run from the post's directory redrew all six maps byte-identical to the committed images (git status clean), in 1 min 41 s. The Elk floodplain step took about 7 min, and neither script writes to the database.
+- **Reproducing is not open to everyone yet:** the scripts need a PostgreSQL fwapg (with the `fresh_default` schema for the Elk) and knowledge's comparison GeoPackages, which knowledge builds and does not commit. `habitat-rules_flow-sources.png` has no script here.
+- **Links:** every URL answers 200 except the two Wiley DOIs, which answer 403 to scripted requests. Crossref resolves both to the cited titles.
+- **Author initials:** `Hill, N.H.` (2024) and `Hill, N.E.` (2025) differ in the `.bib` because the two Poisson pages differ.
+- **Five posts publish as empty pages by design:** they carry `draft: true`.
+- **Plan review:** its blocker (no frozen result) was overtaken by the render, which wrote one. Kept: the stale-freeze hazard and the Quarto version gap, both measured above. Declined: removing `engine: knitr`, since the issue asks for `_freeze/` and the render without R passes. The `X % / Y m / Z km` rule in step 1 and the Poisson Consulting credit are as the draft wrote them, and left for the owner to read.
+
 ## Errors Encountered
 
 | Error | Resolution |
