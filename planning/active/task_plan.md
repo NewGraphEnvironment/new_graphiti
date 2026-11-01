@@ -30,6 +30,10 @@ knowledge went public on 2026-11-01, so its documentation can now be linked. A d
 - [ ] Render a clean clone with R off the `PATH`, as CI has it
 - [ ] Look at the rendered page in a browser: mermaid chart, paired maps, sticker table, five-column catalogue row, references
 
+## Added by the owner, 2026-11-01: hot pink theme
+
+- [x] Take the site's purple Pulse theme to `#FF00CE`: `theme-pink.scss` replaces the missing `custom.css` in `_quarto.yml`
+
 ## Phase 4: To the PR
 
 - [ ] `/code-check branch`
