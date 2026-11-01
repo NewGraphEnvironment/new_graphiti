@@ -47,8 +47,7 @@ The first is out. The others are still to come, and each is linked here once its
 1. **[Habitat rules, from fish evidence to floodplain planning](../2026-11-01-habitat-rules-tested/index.qmd).**
    How a rule is tested against fish surveys across the province, and how it comes off the stream line
    and onto the ground.
-2. **What a New Graph report is.** What people can do with one: see the work, filter and export its
-   tables, cite it and trace where it came from.
+2. **What a New Graph report is.** The system behind a report, told by what people can do with it.
 3. **One floodplain, keyed so anything can join.** Why a new rule or a new layer is a join on the same
    ground, not a new map.
 4. **Flow on almost every stream.** How much water runs in the streams of British Columbia, month by
@@ -73,7 +72,7 @@ The first is out. The others are still to come, and each is linked here once its
 
 # What comes next
 
-This is work in progress, its tools and methods are open, and we want to shape it with the people it affects. Working
+This is work in progress, its modelling packages are open, and we want to shape it with the people it affects. Working
 with First Nations means their priorities shape the work and their knowledge stays theirs. Managers can
 tell us what recovery and offset work need from a rule. Stewardship groups know their streams, and their surveys and their read of a
 rule are what sharpen it. Choosing what fits a question on a real river is where the work is, and that is
