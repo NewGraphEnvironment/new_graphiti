@@ -12,9 +12,9 @@ knowledge went public on 2026-11-01, so its documentation can now be linked. A d
 
 ## Phase 1: Bring the post across
 
-- [ ] Run the no-argument `/planning-init` setup, since `planning/` does not exist yet
-- [ ] Create `posts/2026-11-01-habitat-rules-tested/` with `index.qmd`, `habitat-rules-tested.bib`, and only the images the post uses: seven maps and figures under `fig/`, nine stickers under `fig/hex/`
-- [ ] Front matter: title, subtitle, author, `date: "2026-11-01"`, `categories: [r, fish, floodplain, habitat, stac]`, `image: "fig/habitat-rules_scenarios.jpg"`, `params` (`repo_owner`, `repo_name`, `post_name`), `bibliography`, `toc`
+- [x] Run the no-argument `/planning-init` setup, since `planning/` does not exist yet
+- [x] Create `posts/2026-11-01-habitat-rules-tested/` with `index.qmd`, `habitat-rules-tested.bib`, and only the images the post uses: seven maps and figures under `fig/`, nine stickers under `fig/hex/`
+- [x] Front matter: title, subtitle, author, `date: "2026-11-01"`, `categories: [r, fish, floodplain, habitat, stac]`, `image: "fig/habitat-rules_scenarios.jpg"`, `params` (`repo_owner`, `repo_name`, `post_name`), `bibliography`, `toc`
 - [ ] Try `habitat-rules_fig-build.R` with its paths re-anchored to the post and `OUT_DIR` in the scratchpad; include it and the Elk script only if they redraw the maps. Committed images stay the draft's
 
 ## Phase 2: Public text
