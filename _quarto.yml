@@ -1,5 +1,9 @@
 project:
   type: website
+  # the site's own pages only: comms/ and CLAUDE.md are not pages, and one failed every publish
+  render:
+    - "*.qmd"
+    - "!comms/"
 
 website:
   title: "stay real anyway"
