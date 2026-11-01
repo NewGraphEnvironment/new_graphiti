@@ -150,21 +150,7 @@ Skeena [@hill_etal2024Spatialstream; @hill_etal2025Spatialstream]. Temperature o
 Water quality and habitat degradation follow the same path: hold the network and the fish evidence
 steady, change one variable, score it on held-out data and show the before and after.
 
-## Collaboration for what comes next
-
-This work is in progress and built in the open, and we want to shape where it goes with the people it
-affects.
-
-Working with First Nations means their priorities shape the work and their knowledge stays theirs.
-Provincial and federal managers can check a rule, rerun it and tell us what recovery and offset work
-need from it. Restoration and stewardship groups know their streams, and their surveys and their read of
-a rule are what sharpen it.
-
-The tools keep moving as the evidence and the questions do. Choosing which rule, which flows and which
-floodplain fit a question on a real river is where the work is, and that is the part we would like to do
-with you.
-
-## Chinook and westslope cutthroat: visualizing how evidence results in change
+## Chinook and westslope cutthroat: visualizing what the evidence supports
 
 The same steps apply to each species tested, and two of them show what the method does when the evidence can
 carry a change and when it cannot.
@@ -195,7 +181,7 @@ The tests go beyond a single stream-size cut-off. They cover gradient, channel w
 site to the nearest larger river at a range of river sizes, with flows from more than one model. That
 is how a stream's position in its network shapes its use.
 
-## A future of recovery, restoration, defensible offsets and accurate effectiveness monitoring
+## A future of recovery, restoration, auditable offsets and effectiveness monitoring
 
 - **Species at risk recovery:** habitat definitions with stated confidence, to support critical
   habitat identification and recovery actions.
@@ -265,6 +251,20 @@ Basemap on the maps: Esri World Topographic Map and World Shaded Relief.
 The
 [Open Source page](https://www.newgraphenvironment.com/project/open_source_software/) has the current
 tools and catalogues.
+
+## Collaboration for what comes next
+
+This work is in progress and built in the open, and we want to shape where it goes with the people it
+affects.
+
+Working with First Nations means their priorities shape the work and their knowledge stays theirs.
+Provincial and federal managers can check a rule, rerun it and tell us what recovery and offset work
+need from it. Restoration and stewardship groups know their streams, and their surveys and their read of
+a rule are what sharpen it.
+
+The tools keep moving as the evidence and the questions do. Choosing which rule, which flows and which
+floodplain fit a question on a real river is where the work is, and that is the part we would like to do
+with you.
 
 # References
 
