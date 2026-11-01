@@ -1,0 +1,75 @@
+---
+title: "How our habitat modelling works"
+subtitle: "A series of posts, from fish evidence to floodplain planning"
+author: "Al Irvine, R.P.Bio."
+date: "2026-11-01"
+categories: [fish, floodplain, habitat]
+image: "fig/habitat-rules_chinook-grade.jpg"
+params:
+  repo_owner: "NewGraphEnvironment"
+  repo_name: "new_graphiti"
+  post_name: "2026-11-01-how-our-habitat-modelling-works"
+---
+
+Where should we protect, restore, offset and monitor? People answer those questions on a real river with
+modelled habitat, flow and floodplains in front of them. This series tells how that modelling works today
+and where it is going, one plain story at a time, with maps. It is written for the people who use the
+results or weigh them: First Nations, managers, funders, stewardship groups and practitioners.
+
+![Chinook on the Bulkley River: a floodplain shaded by how likely fish are to use the stream beside it. Floodplain beside streams with no grade is left unshaded. One of the maps from the first chapter.](fig/habitat-rules_chinook-grade.jpg){fig-alt="Map of the floodplain along graded streams on the Bulkley River, shaded from low to high expected use, darkest along the mainstem"}
+
+# How the chapters fit
+
+Each chapter stands on its own, and together they make one system. Fish evidence and flow test a rule, the
+rule joins one floodplain, and everything people look at and steer comes from there.
+
+```{mermaid}
+%%| fig-cap: "The chapters of the series, by number, and how each feeds the next."
+flowchart LR
+  FLOW["4. Flow"] --> RULES["1. Habitat rules"]
+  RULES --> FP(["3. One floodplain"])
+  HEALTH["5. Floodplain health"] --> FP
+  CHANGE["6. Change and airphotos"] --> FP
+  FP --> CAT["7. Catalogues"]
+  CAT --> REPORT["2. Reports"]
+  REPORT --> STEER["8. Steering"]
+  STEER -. review feeds the next run .-> RULES
+```
+
+# The chapters
+
+The first is out. The others are still to come, and each is linked here once its post is up.
+
+1. **[Habitat rules, from fish evidence to floodplain planning](../2026-11-01-habitat-rules-tested/index.qmd).**
+   How a rule is tested against fish surveys across the province, and how it comes off the stream line
+   and onto the ground.
+2. **What a New Graph report is.** What people can do with one: see the work, filter and export its
+   tables, cite it and rerun it.
+3. **One floodplain, keyed so anything can join.** Why a new rule or a new layer is a join on the same
+   ground, not a new map.
+4. **Flow on almost every stream.** How much water runs in the streams of British Columbia, month by
+   month, and what a habitat rule can do with that.
+5. **Floodplain and riparian health.** Wetlands, beaver ponds, the largest cottonwood and mixed forests,
+   and the structure of the canopy, read together on one floodplain.
+6. **Floodplain change and the airphoto baseline.** What has changed on the land and when, and what
+   historic airphotos show about what to restore toward.
+7. **The catalogues.** The open imagery, elevation, point clouds and floodplains behind the work, and how
+   to find them by place and time.
+8. **Steering.** Who runs the models, and how a review on screen and in the field feeds the next run.
+
+# What runs through every chapter
+
+- **Numbers that stand up.** Rules written before results, testing on data held out of the fit,
+  reproducible builds, a record of how each result was made, and checks in the field. Each chapter shows
+  how this works.
+- **Seeing it.** Reports, interactive tables, webmaps and maps are how the work reaches the people who
+  decide, so every chapter carries figures.
+- **Adding it up.** How the pieces become gains, losses and priorities.
+
+# What comes next
+
+This is work in progress, built in the open, and we want to shape it with the people it affects. Working
+with First Nations means their priorities shape the work and their knowledge stays theirs. Managers can
+check a rule and rerun it. Stewardship groups know their streams, and their surveys and their read of a
+rule are what sharpen it. Choosing what fits a question on a real river is where the work is, and that is
+the part we would like to do with you.
