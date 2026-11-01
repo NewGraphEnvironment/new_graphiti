@@ -1,6 +1,6 @@
 ---
 title: "new graphiti"
-description: "a blab playground"
+description: "Drop all fixed forms, absorb what's useful, and become water"
 listing:
   contents: posts
   sort: "date desc"
