@@ -105,7 +105,7 @@ kilometres.
 ![The same reach of the Bulkley under the tuned rule. Green is what this rule adds.](fig/habitat-rules_chinook-tuned.jpg){fig-alt="Map of the same floodplain showing chinook rearing habitat under the tuned rule, with the part only that rule holds in green"}
 :::
 
-![The same reach of the Bulkley, shaded by how likely chinook are to use the stream beside it.](fig/habitat-rules_chinook-grade.jpg){fig-alt="Map of the same floodplain shaded from low to high expected use, darkest along the Bulkley River mainstem"}
+![The same reach of the Bulkley, shaded by how likely chinook are to use the stream beside it. Floodplain beside streams with no grade is left unshaded.](fig/habitat-rules_chinook-grade.jpg){fig-alt="Map of the floodplain along graded streams in the same reach, shaded from low to high expected use, darkest along the Bulkley River mainstem"}
 
 ## Floodplain and riparian health metrics to inform conservation and restoration
 

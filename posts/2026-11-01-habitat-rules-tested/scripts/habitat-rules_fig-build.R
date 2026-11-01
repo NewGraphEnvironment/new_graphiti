@@ -32,12 +32,13 @@ see <- function(cols) {
 }
 if (!dir.exists(dir_out)) stop("run from the post's directory", call. = FALSE)
 
-# knowledge's comparison palette (R/compare_map.R), so these maps read like its articles; gq has no
+# the rule colours are knowledge's comparison palette (R/compare_map.R), so these maps read like its articles; gq has no
 # registry entry for rule comparisons, grades or flood factors yet
 col_rule <- c(both = "#1b6ca8", current = "#d95f02", tested = "#1b9e77",
               neither = "#7b3f98")   # plum: apart from the blue, orange and the basemap's green
 lab_rule <- c(both = "Habitat under both rules", current = "Existing rule only",
               tested = "Tuned rule only", neither = "Floodplain, neither rule")
+# the grade ramp is knowledge's blues with its near-white low class replaced, so Low shows on pale ground
 col_grade <- c("#c6dbef", "#9ecae1", "#6baed6", "#2171b5", "#08306b")
 lab_grade <- c("Low", "", "", "", "High")
 
@@ -214,12 +215,12 @@ map_scenarios <- function(g, w, zoom) {
     tm_shape(r) +
     tm_raster(col.scale = tm_scale_categorical(values = setNames(paste0(cols, "B3"), 1:3)),
               col.legend = tm_legend_hide(), col_alpha = 1) +
-    tm_add_legend(type = "polygons", labels = labs, fill = cols, col = NA, title = "Flood factor scenario")
+    tm_add_legend(type = "polygons", labels = labs, fill = see(cols), col = NA, title = "Flood factor scenario")
   save_map(frame(m, w), "habitat-rules_scenarios.jpg", w)
 }
 
 map_cells <- function(r, sg, w, zoom, cols, labs, title, name, lines = TRUE, levels_of = seq_along(cols),
-                      leg = c("left", "top")) {
+                      leg = c("left", "top"), edge = NULL) {
   m <- tm_shape(basemap_of(w, zoom), bbox = st_bbox(w)) + tm_rgb() +
     tm_shape(r) +
     tm_raster(col.scale = tm_scale_categorical(values = setNames(unname(see(cols)), levels_of)),
@@ -231,7 +232,12 @@ map_cells <- function(r, sg, w, zoom, cols, labs, title, name, lines = TRUE, lev
       m <- m + tm_shape(hab[hab$class == k, ]) + tm_lines(col = col_rule[[k]], lwd = 0.9)
     }
   }
-  m <- m + tm_add_legend(type = "polygons", labels = labs, fill = unname(cols), col = NA, title = title)
+  # a thin line round the whole footprint, so the palest class shows on pale ground
+  if (!is.null(edge)) {
+    m <- m + tm_shape(st_as_sf(as.polygons(ifel(is.na(r), NA, 1L)))) + tm_borders(col = edge, lwd = 0.4)
+  }
+  # the legend takes the alpha the cells are drawn with
+  m <- m + tm_add_legend(type = "polygons", labels = labs, fill = unname(see(cols)), col = NA, title = title)
   save_map(frame(m, w, leg), name, w)
 }
 
@@ -257,7 +263,7 @@ map_rule(ch_cells$class, ch_win, w_bulk, 12, "current", "Chinook rearing, existi
 map_rule(ch_cells$class, ch_win, w_bulk, 12, "tested", "Chinook rearing, tuned rule",
          "habitat-rules_chinook-tuned.jpg", leg = c("left", "bottom"))
 map_cells(ch_cells$grade, ch_win, w_bulk, 12, col_grade, lab_grade, "Expected use",
-          "habitat-rules_chinook-grade.jpg", lines = FALSE, leg = c("left", "bottom"))
+          "habitat-rules_chinook-grade.jpg", lines = FALSE, leg = c("left", "bottom"), edge = "#2171b5")
 
 # the scenarios on the Kootenay flats at Creston, where they separate
 map_scenarios("kotl", win_of(1688100, 502000, 14000), zoom = 12)

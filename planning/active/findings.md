@@ -41,6 +41,10 @@ The draft's own rules carry over: scale and method rather than counts that move 
 - **Theme check corrected:** searching for Pulse's two hex values missed inline code's own purple (`--bs-code-color: #7d12ba`, found in review round 2). A computed-style scan of five rendered pages (home, about, this post, two older posts) now finds no purple-hued colour on any element. Unused definitions such as Bootstrap's `$indigo` stay in the stylesheet.
 - **Grade map palette:** the owner asked for Low to show rather than look white, so the ramp starts at pale blue `#c6dbef`.
 
+- **Ungraded floodplain:** on the Bulkley window, 29,675 of 179,471 floodplain cells (16.5 %) sit beside segments with no grade and are not drawn on the expected-use map. All but 24 are in the rule map's `neither` class. The caption and alt text now say so, and the map keeps its five classes.
+- **Owner approved the footprint outline** on the expected-use map, 2026-11-01.
+- **Legends:** every map's legend now takes the alpha its cells are drawn with, so all six images changed on the last redraw.
+
 ## Errors Encountered
 
 | Error | Resolution |
