@@ -38,7 +38,8 @@ col_rule <- c(both = "#1b6ca8", current = "#d95f02", tested = "#1b9e77",
               neither = "#7b3f98")   # plum: apart from the blue, orange and the basemap's green
 lab_rule <- c(both = "Habitat under both rules", current = "Existing rule only",
               tested = "Tuned rule only", neither = "Floodplain, neither rule")
-# the grade ramp is knowledge's blues with its near-white low class replaced, so Low shows on pale ground
+# the grade ramp starts at pale blue so Low shows on pale ground, which moves it off knowledge's: #c6dbef
+# is 0-0.2 here and 0.2-0.4 in its articles, and #9ecae1 is not in its palette
 col_grade <- c("#c6dbef", "#9ecae1", "#6baed6", "#2171b5", "#08306b")
 lab_grade <- c("Low", "", "", "", "High")
 
@@ -122,8 +123,7 @@ if (!file.exists(f_towns)) {
 towns <- st_read(f_towns, quiet = TRUE)
 if (!nrow(towns)) stop("no towns", call. = FALSE)
 sty_town <- gq::gq_reg_main()$layers$town
-# gq has no stream label yet; its blue italic water label is the lake entry's
-sty_stream_label <- gq::gq_reg_main()$layers$lake$label
+sty_stream_label <- gq::gq_reg_main()$layers$stream_labels$label
 
 # the rivers the maps are about, named by the Freshwater Atlas; cached in CAT_DIR
 f_rivers <- file.path(dir_cat, "rivers.gpkg")

@@ -15,7 +15,7 @@ knowledge went public on 2026-11-01, so its documentation can now be linked. A d
 - [x] Run the no-argument `/planning-init` setup, since `planning/` does not exist yet
 - [x] Create `posts/2026-11-01-habitat-rules-tested/` with `index.qmd`, `habitat-rules-tested.bib`, and only the images the post uses: seven maps and figures under `fig/`, nine stickers under `fig/hex/`
 - [x] Front matter: title, subtitle, author, `date: "2026-11-01"`, `categories: [r, fish, floodplain, habitat, stac]`, `image: "fig/habitat-rules_scenarios.jpg"`, `params` (`repo_owner`, `repo_name`, `post_name`), `bibliography`, `toc`
-- [x] Try `habitat-rules_fig-build.R` with its paths re-anchored to the post and `OUT_DIR` in the scratchpad; include it and the Elk script only if they redraw the maps. Committed images stay the draft's
+- [x] Try `habitat-rules_fig-build.R` with its paths re-anchored to the post and `OUT_DIR` in the scratchpad; include it and the Elk script only if they redraw the maps. Committed images are the final redraw of these scripts, after the owner's palette and outline changes
 
 ## Phase 2: Public text
 
@@ -36,8 +36,8 @@ knowledge went public on 2026-11-01, so its documentation can now be linked. A d
 
 ## Phase 4: To the PR
 
-- [ ] `/code-check branch`
-- [ ] Re-read origin (`git log HEAD..origin/main`)
+- [x] `/code-check branch`
+- [x] Re-read origin (`git log HEAD..origin/main`)
 - [ ] `/planning-archive`, then `/gh-pr-push` with `Fixes #8`, and a check of every issue number the branch introduces
 
 ## Owed at the end (reported, done after merge)
@@ -49,8 +49,8 @@ knowledge went public on 2026-11-01, so its documentation can now be linked. A d
 ## Validation
 
 - [x] Clean-clone render with no R passes
-- [ ] `/code-check` clean over the branch
-- [ ] PWF checkboxes match landed work
+- [x] `/code-check` clean over the branch
+- [x] PWF checkboxes match landed work
 - [ ] `/planning-archive` on completion
 
 Each change is proved by the render with no R (publish works), the URL probe (links resolve), the read-through (public text) and the served-page fetch after merge (it is live).

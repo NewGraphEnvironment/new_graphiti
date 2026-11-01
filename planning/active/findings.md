@@ -45,6 +45,9 @@ The draft's own rules carry over: scale and method rather than counts that move 
 - **Owner approved the footprint outline** on the expected-use map, 2026-11-01.
 - **Legends:** every map's legend now takes the alpha its cells are drawn with, so all six images changed on the last redraw.
 
+- **Code check:** four rounds. Round 3's stale comment sat inside the previous change, so the loop ended on an enumeration: round 4 walked 23 facts held in more than one place, and two comments disagreed, both now corrected. Five reviewer agents in all, counting the plan review.
+- **Thin strips on the outline:** 1,742 of 149,796 drawn cells on the expected-use map (1.2 %) are one cell wide, 1,363 of them Low, so they read as dotted blue lines on tributaries.
+
 ## Errors Encountered
 
 | Error | Resolution |
