@@ -22,7 +22,7 @@ results or weigh them: First Nations, managers, funders, stewardship groups and 
 
 Each chapter stands on its own, and together they are built as one system. Fish evidence and flow test a
 rule, the rule joins one floodplain, and people see the work through reports, tables and maps. Some of this
-runs today and some is still being built, and each chapter says which.
+runs today and some is still being built.
 
 ```{mermaid}
 %%| fig-cap: "The chapters of the series, by number, and how they connect as the system is designed. Some of these connections run today and others are still being built."
@@ -48,7 +48,7 @@ The first is out. The others are still to come, and each is linked here once its
    How a rule is tested against fish surveys across the province, and how it comes off the stream line
    and onto the ground.
 2. **What a New Graph report is.** What people can do with one: see the work, filter and export its
-   tables, cite it and rerun it.
+   tables, cite it and trace where it came from.
 3. **One floodplain, keyed so anything can join.** Why a new rule or a new layer is a join on the same
    ground, not a new map.
 4. **Flow on almost every stream.** How much water runs in the streams of British Columbia, month by
@@ -62,18 +62,18 @@ The first is out. The others are still to come, and each is linked here once its
 8. **Steering.** Where this is heading: other people running the models for their own places, and a
    review on screen and in the field feeding the next run.
 
-# What runs through every chapter
+# What runs through the series
 
 - **Numbers that stand up.** Decision rules written before results, testing on data held out of the fit,
   reproducible builds and a record of how each result was made. Where a chapter has a result, it shows
   which of these stand behind it and says where the result is still a modelled screen.
-- **Seeing it.** Reports, interactive tables, webmaps and maps are how the work reaches the people who
-  decide, so every chapter carries figures.
+- **Seeing it.** Reports, interactive tables and maps are how the work reaches the people who decide, so
+  every chapter carries figures.
 - **Adding it up.** How the pieces can become gains, losses and priorities, and how far that has come.
 
 # What comes next
 
-This is work in progress, built in the open, and we want to shape it with the people it affects. Working
+This is work in progress, its tools and methods are open, and we want to shape it with the people it affects. Working
 with First Nations means their priorities shape the work and their knowledge stays theirs. Managers can
 tell us what recovery and offset work need from a rule. Stewardship groups know their streams, and their surveys and their read of a
 rule are what sharpen it. Choosing what fits a question on a real river is where the work is, and that is
