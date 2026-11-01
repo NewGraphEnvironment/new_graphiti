@@ -21,19 +21,22 @@ results or weigh them: First Nations, managers, funders, stewardship groups and 
 # How the chapters fit
 
 Each chapter stands on its own, and together they make one system. Fish evidence and flow test a rule, the
-rule joins one floodplain, and everything people look at and steer comes from there.
+rule joins one floodplain, and the reports people read draw on that. Steering, where review feeds the next
+run, is where we are heading.
 
 ```{mermaid}
-%%| fig-cap: "The chapters of the series, by number, and how each feeds the next."
+%%| fig-cap: "The chapters of the series, by number, and how they connect. The dashed lines are where the work is heading."
 flowchart LR
+  CAT["7. Catalogues"] --> FP(["3. One floodplain"])
+  CAT --> HEALTH["5. Floodplain health"]
+  CAT --> CHANGE["6. Change and airphotos"]
   FLOW["4. Flow"] --> RULES["1. Habitat rules"]
-  RULES --> FP(["3. One floodplain"])
-  HEALTH["5. Floodplain health"] --> FP
-  CHANGE["6. Change and airphotos"] --> FP
-  FP --> CAT["7. Catalogues"]
-  CAT --> REPORT["2. Reports"]
-  REPORT --> STEER["8. Steering"]
-  STEER -. review feeds the next run .-> RULES
+  RULES --> FP
+  HEALTH --> FP
+  CHANGE --> FP
+  FP --> REPORT["2. Reports"]
+  REPORT -.-> STEER["8. Steering"]
+  STEER -. review into the next run .-> RULES
 ```
 
 # The chapters
@@ -55,13 +58,14 @@ The first is out. The others are still to come, and each is linked here once its
    historic airphotos show about what to restore toward.
 7. **The catalogues.** The open imagery, elevation, point clouds and floodplains behind the work, and how
    to find them by place and time.
-8. **Steering.** Who runs the models, and how a review on screen and in the field feeds the next run.
+8. **Steering.** Where this is heading: other people running the models for their own places, and a
+   review on screen and in the field feeding the next run.
 
 # What runs through every chapter
 
-- **Numbers that stand up.** Rules written before results, testing on data held out of the fit,
-  reproducible builds, a record of how each result was made, and checks in the field. Each chapter shows
-  how this works.
+- **Numbers that stand up.** Decision rules written before results, testing on data held out of the fit,
+  reproducible builds and a record of how each result was made. Each chapter shows how this works and
+  says where a result is still a modelled screen.
 - **Seeing it.** Reports, interactive tables, webmaps and maps are how the work reaches the people who
   decide, so every chapter carries figures.
 - **Adding it up.** How the pieces become gains, losses and priorities.
