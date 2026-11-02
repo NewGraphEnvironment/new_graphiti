@@ -16,7 +16,7 @@ format:
   html:
     theme:
     - pulse
-    - custom.css
+    - theme-pink.scss
     css: styles.css
 execute:
   freeze: auto
