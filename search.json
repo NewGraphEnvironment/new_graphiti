@@ -105,13 +105,6 @@
     "text": "Habitat rules, tested and carried onto the floodplain\n\n\nFrom fish evidence to areas for conservation, restoration and policy planning\n\n\n\nr\n\nfish\n\nfloodplain\n\nhabitat\n\nstac\n\n\n\n\n\n\n\n\n\nNov 1, 2026\n\n\nAl Irvine, R.P.Bio.\n\n\n\n\n\n\n\n\n\n\n\n\nSentinel-2 Ortho Mosaics with STAC and gdalcubes\n\n\n\n\n\n\nr\n\nstac\n\ngdalcubes\n\nsentinel-2\n\nleaflet\n\nremote sensing\n\n\n\n\n\n\n\n\n\nJan 8, 2026\n\n\nal\n\n\n\n\n\n\n\n\n\n\n\n\nGetting details of historic orthophoto imagery with R\n\n\n\n\n\n\nfwapg\n\nr\n\nbcdata\n\nimagery\n\napi\n\n\n\n\n\n\n\n\n\nNov 15, 2024\n\n\nal\n\n\n\n\n\n\n\n\n\n\n\n\nMapping Land Cover with R\n\n\n\n\n\n\nland cover\n\nR\n\nplanetary computer\n\nremote sensing\n\n\n\n\n\n\n\n\n\nJul 1, 2024\n\n\nal\n\n\n\n\n\n\n\n\n\n\n\n\nMapping and Plotting Precipitation with R\n\n\n\n\n\n\nprecipitation\n\nR\n\ndrought\n\nrayshader\n\n\n\n\n\n\n\n\n\nJun 19, 2024\n\n\nal\n\n\n\n\n\n\n\n\n\n\n\n\nSetting aws bucket permissions with R\n\n\n\n\n\n\naws\n\ns3\n\nr\n\npaws\n\n\n\n\n\n\n\n\n\nMay 24, 2024\n\n\nal\n\n\n\n\n\n\n\n\n\n\n\n\nSyncing files to aws with R\n\n\n\n\n\n\naws\n\ns3\n\nr\n\npaws\n\nprocessx\n\n\n\n\n\n\n\n\n\nMay 23, 2024\n\n\nal\n\n\n\n\n\nNo matching items"
   },
   {
-    "objectID": "about.html",
-    "href": "about.html",
-    "title": "rws",
-    "section": "",
-    "text": "raNdom workish stufF"
-  },
-  {
     "objectID": "posts/2024-06-30-land-cover/index.html",
     "href": "posts/2024-06-30-land-cover/index.html",
     "title": "Mapping Land Cover with R",
