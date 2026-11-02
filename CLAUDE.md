@@ -2,6 +2,8 @@
 
 **Publishing:** posts freeze (`posts/_metadata.yml`) and the publish workflow installs Quarto with no R, so the site serves `_freeze/` whatever a post's `index.qmd` says. After any edit to a post, run `quarto render posts/<post>/index.qmd`, commit its `_freeze/`, and check that the freeze `hash` equals the md5 of `index.qmd`. A post with `draft: true` publishes as an empty page on purpose.
 
+**Terminology:** in posts, the thresholds link, fresh and knowledge test are "fish habitat definitions" on first use and wherever a reader could land cold (a section opener, a caption), "habitat definitions" elsewhere; never "rules", and never bare "definitions", which reads as jargon. The packages' code still says `rules` (`parameters_habitat_rules.yaml`, `compare_rules()`); a post's URL slug and file names may too.
+
 <!-- BEGIN SOUL CONVENTIONS — DO NOT EDIT BELOW THIS LINE -->
 
 
