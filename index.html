@@ -48,7 +48,7 @@ ul.task-list li input[type="checkbox"] {
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-17888a1159294d3eb470f19f6f52f5a5.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-1c29c064d7aec03465e3665acc93407b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-91918244efda821d4041dafb241c03a6.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -86,9 +86,9 @@ ul.task-list li input[type="checkbox"] {
     }
 
     const options = {
-      valueNames: ['listing-date','listing-title','listing-author','listing-image','listing-description','listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
+      valueNames: ['listing-date','listing-title','listing-author','listing-subtitle','listing-image','listing-description','listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
       
-      searchColumns: ["listing-date","listing-title","listing-author","listing-image","listing-description","listing-categories"],
+      searchColumns: ["listing-date","listing-title","listing-author","listing-subtitle","listing-image","listing-description","listing-categories"],
     };
 
     window['quarto-listings'] = window['quarto-listings'] || {};
@@ -199,7 +199,7 @@ window.Quarto = {
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         
-    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(6)</span></div><div class="category" data-category="YXBp">api <span class="quarto-category-count">(1)</span></div><div class="category" data-category="YXdz">aws <span class="quarto-category-count">(2)</span></div><div class="category" data-category="YmNkYXRh">bcdata <span class="quarto-category-count">(1)</span></div><div class="category" data-category="ZHJvdWdodA==">drought <span class="quarto-category-count">(1)</span></div><div class="category" data-category="ZndhcGc=">fwapg <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Z2RhbGN1YmVz">gdalcubes <span class="quarto-category-count">(1)</span></div><div class="category" data-category="aW1hZ2VyeQ==">imagery <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bGFuZCUyMGNvdmVy">land cover <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bGVhZmxldA==">leaflet <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cGF3cw==">paws <span class="quarto-category-count">(2)</span></div><div class="category" data-category="cGxhbmV0YXJ5JTIwY29tcHV0ZXI=">planetary computer <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cHJlY2lwaXRhdGlvbg==">precipitation <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cHJvY2Vzc3g=">processx <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cg==">r <span class="quarto-category-count">(4)</span></div><div class="category" data-category="Ug==">R <span class="quarto-category-count">(2)</span></div><div class="category" data-category="cmF5c2hhZGVy">rayshader <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cmVtb3RlJTIwc2Vuc2luZw==">remote sensing <span class="quarto-category-count">(2)</span></div><div class="category" data-category="czM=">s3 <span class="quarto-category-count">(2)</span></div><div class="category" data-category="c2VudGluZWwtMg==">sentinel-2 <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c3RhYw==">stac <span class="quarto-category-count">(1)</span></div></div></div>
+    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(7)</span></div><div class="category" data-category="YXBp">api <span class="quarto-category-count">(1)</span></div><div class="category" data-category="YXdz">aws <span class="quarto-category-count">(2)</span></div><div class="category" data-category="YmNkYXRh">bcdata <span class="quarto-category-count">(1)</span></div><div class="category" data-category="ZHJvdWdodA==">drought <span class="quarto-category-count">(1)</span></div><div class="category" data-category="ZmlzaA==">fish <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Zmxvb2RwbGFpbg==">floodplain <span class="quarto-category-count">(1)</span></div><div class="category" data-category="ZndhcGc=">fwapg <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Z2RhbGN1YmVz">gdalcubes <span class="quarto-category-count">(1)</span></div><div class="category" data-category="aGFiaXRhdA==">habitat <span class="quarto-category-count">(1)</span></div><div class="category" data-category="aW1hZ2VyeQ==">imagery <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bGFuZCUyMGNvdmVy">land cover <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bGVhZmxldA==">leaflet <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cGF3cw==">paws <span class="quarto-category-count">(2)</span></div><div class="category" data-category="cGxhbmV0YXJ5JTIwY29tcHV0ZXI=">planetary computer <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cHJlY2lwaXRhdGlvbg==">precipitation <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cHJvY2Vzc3g=">processx <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cg==">r <span class="quarto-category-count">(5)</span></div><div class="category" data-category="Ug==">R <span class="quarto-category-count">(2)</span></div><div class="category" data-category="cmF5c2hhZGVy">rayshader <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cmVtb3RlJTIwc2Vuc2luZw==">remote sensing <span class="quarto-category-count">(2)</span></div><div class="category" data-category="czM=">s3 <span class="quarto-category-count">(2)</span></div><div class="category" data-category="c2VudGluZWwtMg==">sentinel-2 <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c3RhYw==">stac <span class="quarto-category-count">(2)</span></div></div></div>
 <!-- main -->
 <main class="content quarto-banner-title-block column-page-left" id="quarto-document-content">
 
@@ -213,7 +213,48 @@ window.Quarto = {
 
 <div class="quarto-listing quarto-listing-container-default" id="listing-listing">
 <div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-categories="ciUyQ3N0YWMlMkNnZGFsY3ViZXMlMkNzZW50aW5lbC0yJTJDbGVhZmxldCUyQ3JlbW90ZSUyMHNlbnNpbmc=" data-listing-date-sort="1767830400000" data-listing-file-modified-sort="1793570969115" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1100">
+<div class="quarto-post image-right" data-index="0" data-categories="ciUyQ2Zpc2glMkNmbG9vZHBsYWluJTJDaGFiaXRhdCUyQ3N0YWM=" data-listing-date-sort="1793491200000" data-listing-file-modified-sort="1793579936767" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="13" data-listing-word-count-sort="2552">
+<div class="thumbnail"><a href="./posts/2026-11-01-habitat-rules-tested/index.html" class="no-external">
+
+<img loading="lazy" src="./posts/2026-11-01-habitat-rules-tested/fig/habitat-rules_scenarios.jpg" class="thumbnail-image">
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./posts/2026-11-01-habitat-rules-tested/index.html" class="no-external">Habitat rules, tested and carried onto the floodplain</a>
+</h3>
+<div class="listing-subtitle">
+<a href="./posts/2026-11-01-habitat-rules-tested/index.html" class="no-external">From fish evidence to areas for conservation, restoration and policy planning</a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('cg=='); return false;">r</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZmlzaA=='); return false;">fish</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('Zmxvb2RwbGFpbg=='); return false;">floodplain</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('aGFiaXRhdA=='); return false;">habitat</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('c3RhYw=='); return false;">stac</div>
+
+</div>
+<div class="delink listing-description"><a href="./posts/2026-11-01-habitat-rules-tested/index.html" class="no-external">
+Decisions about where to protect, restore, offset and monitor rest on habitat rules: how steep a stream a fish will use, how small, how far from a larger river. We start…
+</a></div>
+</div>
+<div class="metadata">
+<a href="./posts/2026-11-01-habitat-rules-tested/index.html" class="no-external">
+<div class="listing-date">
+Nov 1, 2026
+</div>
+<div class="listing-author">
+Al Irvine, R.P.Bio.
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="1" data-categories="ciUyQ3N0YWMlMkNnZGFsY3ViZXMlMkNzZW50aW5lbC0yJTJDbGVhZmxldCUyQ3JlbW90ZSUyMHNlbnNpbmc=" data-listing-date-sort="1767830400000" data-listing-file-modified-sort="1793579936735" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1100">
 <div class="thumbnail"><a href="./posts/2026-01-08-stac-ortho-mosaics/index.html" class="no-external">
 
 <img loading="lazy" src="./posts/2026-01-08-stac-ortho-mosaics/image.jpg" class="thumbnail-image">
@@ -223,6 +264,9 @@ window.Quarto = {
 <h3 class="no-anchor listing-title">
 <a href="./posts/2026-01-08-stac-ortho-mosaics/index.html" class="no-external">Sentinel-2 Ortho Mosaics with STAC and gdalcubes</a>
 </h3>
+<div class="listing-subtitle">
+<a href="./posts/2026-01-08-stac-ortho-mosaics/index.html" class="no-external"></a>
+</div>
 <div class="listing-categories">
 
 <div class="listing-category" onclick="window.quartoListingCategory('cg=='); return false;">r</div>
@@ -253,7 +297,7 @@ al
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="1" data-categories="ZndhcGclMkNyJTJDYmNkYXRhJTJDaW1hZ2VyeSUyQ2FwaQ==" data-listing-date-sort="1731628800000" data-listing-file-modified-sort="1793570969100" data-listing-date-modified-sort="1737331200000" data-listing-reading-time-sort="28" data-listing-word-count-sort="5596">
+<div class="quarto-post image-right" data-index="2" data-categories="ZndhcGclMkNyJTJDYmNkYXRhJTJDaW1hZ2VyeSUyQ2FwaQ==" data-listing-date-sort="1731628800000" data-listing-file-modified-sort="1793579936722" data-listing-date-modified-sort="1737331200000" data-listing-reading-time-sort="28" data-listing-word-count-sort="5596">
 <div class="thumbnail"><a href="./posts/2024-11-15-bcdata-ortho-historic/index.html" class="no-external">
 
 <img loading="lazy" src="./posts/2024-11-15-bcdata-ortho-historic/image.jpg" class="thumbnail-image">
@@ -263,6 +307,9 @@ al
 <h3 class="no-anchor listing-title">
 <a href="./posts/2024-11-15-bcdata-ortho-historic/index.html" class="no-external">Getting details of historic orthophoto imagery with R</a>
 </h3>
+<div class="listing-subtitle">
+<a href="./posts/2024-11-15-bcdata-ortho-historic/index.html" class="no-external"></a>
+</div>
 <div class="listing-categories">
 
 <div class="listing-category" onclick="window.quartoListingCategory('ZndhcGc='); return false;">fwapg</div>
@@ -291,7 +338,7 @@ al
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="2" data-categories="bGFuZCUyMGNvdmVyJTJDUiUyQ3BsYW5ldGFyeSUyMGNvbXB1dGVyJTJDcmVtb3RlJTIwc2Vuc2luZw==" data-listing-date-sort="1719792000000" data-listing-file-modified-sort="1793570969043" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="18" data-listing-word-count-sort="3445">
+<div class="quarto-post image-right" data-index="3" data-categories="bGFuZCUyMGNvdmVyJTJDUiUyQ3BsYW5ldGFyeSUyMGNvbXB1dGVyJTJDcmVtb3RlJTIwc2Vuc2luZw==" data-listing-date-sort="1719792000000" data-listing-file-modified-sort="1793579936671" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="18" data-listing-word-count-sort="3445">
 <div class="thumbnail"><a href="./posts/2024-06-30-land-cover/index.html" class="no-external">
 
 <img loading="lazy" src="./posts/2024-06-30-land-cover/image.jpg" class="thumbnail-image">
@@ -301,6 +348,9 @@ al
 <h3 class="no-anchor listing-title">
 <a href="./posts/2024-06-30-land-cover/index.html" class="no-external">Mapping Land Cover with R</a>
 </h3>
+<div class="listing-subtitle">
+<a href="./posts/2024-06-30-land-cover/index.html" class="no-external"></a>
+</div>
 <div class="listing-categories">
 
 <div class="listing-category" onclick="window.quartoListingCategory('bGFuZCUyMGNvdmVy'); return false;">land cover</div>
@@ -327,7 +377,7 @@ al
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="3" data-categories="cHJlY2lwaXRhdGlvbiUyQ1IlMkNkcm91Z2h0JTJDcmF5c2hhZGVy" data-listing-date-sort="1718755200000" data-listing-file-modified-sort="1793570969028" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="17" data-listing-word-count-sort="3298">
+<div class="quarto-post image-right" data-index="4" data-categories="cHJlY2lwaXRhdGlvbiUyQ1IlMkNkcm91Z2h0JTJDcmF5c2hhZGVy" data-listing-date-sort="1718755200000" data-listing-file-modified-sort="1793579936659" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="17" data-listing-word-count-sort="3298">
 <div class="thumbnail"><a href="./posts/2024-06-19-precipitation/index.html" class="no-external">
 
 <img loading="lazy" src="./posts/2024-06-19-precipitation/image.jpg" class="thumbnail-image">
@@ -337,6 +387,9 @@ al
 <h3 class="no-anchor listing-title">
 <a href="./posts/2024-06-19-precipitation/index.html" class="no-external">Mapping and Plotting Precipitation with R</a>
 </h3>
+<div class="listing-subtitle">
+<a href="./posts/2024-06-19-precipitation/index.html" class="no-external"></a>
+</div>
 <div class="listing-categories">
 
 <div class="listing-category" onclick="window.quartoListingCategory('cHJlY2lwaXRhdGlvbg=='); return false;">precipitation</div>
@@ -363,7 +416,7 @@ al
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="4" data-categories="YXdzJTJDczMlMkNyJTJDcGF3cw==" data-listing-date-sort="1716508800000" data-listing-file-modified-sort="1793570969130" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="8" data-listing-word-count-sort="1523">
+<div class="quarto-post image-right" data-index="5" data-categories="YXdzJTJDczMlMkNyJTJDcGF3cw==" data-listing-date-sort="1716508800000" data-listing-file-modified-sort="1793579936768" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="8" data-listing-word-count-sort="1523">
 <div class="thumbnail"><a href="./posts/aws-storage-permissions/index.html" class="no-external">
 
 <img loading="lazy" src="./posts/aws-storage-permissions/image.jpg" class="thumbnail-image">
@@ -373,6 +426,9 @@ al
 <h3 class="no-anchor listing-title">
 <a href="./posts/aws-storage-permissions/index.html" class="no-external">Setting aws bucket permissions with R</a>
 </h3>
+<div class="listing-subtitle">
+<a href="./posts/aws-storage-permissions/index.html" class="no-external"></a>
+</div>
 <div class="listing-categories">
 
 <div class="listing-category" onclick="window.quartoListingCategory('YXdz'); return false;">aws</div>
@@ -399,7 +455,7 @@ al
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="5" data-categories="YXdzJTJDczMlMkNyJTJDcGF3cyUyQ3Byb2Nlc3N4" data-listing-date-sort="1716422400000" data-listing-file-modified-sort="1793570969130" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1182">
+<div class="quarto-post image-right" data-index="6" data-categories="YXdzJTJDczMlMkNyJTJDcGF3cyUyQ3Byb2Nlc3N4" data-listing-date-sort="1716422400000" data-listing-file-modified-sort="1793579936768" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1182">
 <div class="thumbnail"><a href="./posts/aws-storage-processx/index.html" class="no-external">
 
 <img loading="lazy" src="./posts/aws-storage-processx/image.jpg" class="thumbnail-image">
@@ -409,6 +465,9 @@ al
 <h3 class="no-anchor listing-title">
 <a href="./posts/aws-storage-processx/index.html" class="no-external">Syncing files to aws with R</a>
 </h3>
+<div class="listing-subtitle">
+<a href="./posts/aws-storage-processx/index.html" class="no-external"></a>
+</div>
 <div class="listing-categories">
 
 <div class="listing-category" onclick="window.quartoListingCategory('YXdz'); return false;">aws</div>
