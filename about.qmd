@@ -1,5 +1,5 @@
 ---
-title: "rws"
+title: "r1de"
 image: assets/gif.gif
 about:
   template: marquee
@@ -13,7 +13,3 @@ about:
       href: https://github.com/NewGraphEnvironment
 
 ---
-
-::: {style="text-align: center; font-size: 125%;"}
-raNdom workish stufF
-:::
