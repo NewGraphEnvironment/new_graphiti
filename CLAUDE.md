@@ -1,3 +1,7 @@
+# new_graphiti
+
+**Publishing:** posts freeze (`posts/_metadata.yml`) and the publish workflow installs Quarto with no R, so the site serves `_freeze/` whatever a post's `index.qmd` says. After any edit to a post, run `quarto render posts/<post>/index.qmd`, commit its `_freeze/`, and check that the freeze `hash` equals the md5 of `index.qmd`. A post with `draft: true` publishes as an empty page on purpose.
+
 <!-- BEGIN SOUL CONVENTIONS — DO NOT EDIT BELOW THIS LINE -->
 
 
