@@ -7,3 +7,13 @@
   padding-left: 10px;
   background-origin: content-box;
 }
+
+/* A sticker keeps its size in a table cell: max-width: 100% lets the column collapse on a phone, and the text then runs over the image */
+td > img[src*="fig/hex/"] {
+  max-width: none;
+}
+
+/* A long URL in a reference wraps, or it pushes the whole page sideways on a phone */
+.csl-entry {
+  overflow-wrap: anywhere;
+}
