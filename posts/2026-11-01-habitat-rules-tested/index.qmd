@@ -1,5 +1,5 @@
 ---
-title: "Habitat rules, tested and carried onto the floodplain"
+title: "Fish habitat definitions, tested and carried onto the floodplain"
 subtitle: "From fish evidence to areas for conservation, restoration and policy planning"
 author: "Al Irvine, R.P.Bio."
 date: "2026-11-01"
@@ -19,29 +19,29 @@ format:
 
 # From fish evidence to floodplain planning
 
-Decisions about where to protect, restore, offset and monitor rest on habitat rules: how steep a
+Decisions about where to protect, restore, offset and monitor rest on fish habitat definitions: how steep a
 stream a fish will use, how small, how far from a larger river. We start from what is known about each
 species: its life history and biology, the flows it depends on and the published work. Then we test
-the rules the way science tests anything. Our open tools hold the stream network, the flows and the fish records steady,
-change one rule, and score it on watershed groups it was not fitted to, from tens of thousands of
+the habitat definitions the way science tests anything. Our open tools hold the stream network, the flows and the fish records steady,
+change one habitat definition, and score it on watershed groups it was not fitted to, from tens of thousands of
 fish surveys across the province. Every result records how it was made, so anyone can check it,
 rerun it and build on it.
 
-Then the rule comes off the stream line and onto the ground. It joins one floodplain, drawn group by
+Then the habitat definition comes off the stream line and onto the ground. It joins one floodplain, drawn group by
 group from the whole stream network and published, built to sit beside the wetlands, the largest cottonwood and
 mixed forests, the structure of the canopy and the changes on the land. That gives people modelled
-areas to plan conservation, restoration and policy on, and a rule can change without redrawing the
+areas to plan conservation, restoration and policy on, and a habitat definition can change without redrawing the
 ground under it. The work is in the open and moving, and we want to shape what comes next with the
 people who use it.
 
 # How habitat mapping is tested and reaches the ground
 
 ```{mermaid}
-%%| fig-cap: "A rule is tested against fish evidence, then joins one floodplain that everything else can join too."
+%%| fig-cap: "A fish habitat definition is tested against fish evidence, then joins one floodplain that everything else can join too."
 flowchart LR
   EV["Fish evidence<br/>surveys across<br/>the province"] --> TEST
   LIT["Priors: life history,<br/>biology, published<br/>thresholds"] -. what to expect .-> RULE
-  RULE["A habitat rule,<br/>stated"] --> TEST
+  RULE["A fish habitat<br/>definition, stated"] --> TEST
   FLOW["Flow on almost<br/>every stream, open<br/>and on the Atlas"] --> TEST
   STEADY["Held steady:<br/>network, flows,<br/>records, code"] --> TEST
   TEST(["Scored on watershed<br/>groups held out<br/>of the fit"]) --> LINE["Habitat on<br/>the stream line"]
@@ -53,17 +53,17 @@ flowchart LR
 
 ## Testing habitat models with fish sampling records
 
-1. **State the rule, and what the biology leads us to expect.** Westslope cutthroat rear in streams
+1. **State the habitat definition, and what the biology leads us to expect.** Westslope cutthroat rear in streams
    below X % gradient, above Y m wide, within Z km of a larger river. Each species' life history and
-   the published thresholds, kept as cited quotes checked against their sources, say what a rule
-   should look like before any fish record is scored.
+   the published thresholds, kept as cited quotes checked against their sources, say what a habitat
+   definition should look like before any fish record is scored.
 2. **Hold everything else steady.** One stream network, one set of flows, one set of fish records,
    one version of the code, each recorded so a run can be traced to exactly what went in.
 3. **Test it on fish it has not seen.** Tens of thousands of electrofishing visits across the
-   province [@provinceofbritishcolumbia2022FisheriesData], each one a fish caught or not caught. Rules are scored on whole watershed groups held
+   province [@provinceofbritishcolumbia2022FisheriesData], each one a fish caught or not caught. Habitat definitions are scored on whole watershed groups held
    out of the fit. The model accounts for how much stream was fished, which data set a record came
-   from, its period and its group, so a rule is not credited for a difference in sampling.
-4. **Compare before and after.** The tested rule sits beside the current one on the same network:
+   from, its period and its group, so a habitat definition is not credited for a difference in sampling.
+4. **Compare before and after.** The tested habitat definition sits beside the current one on the same network:
    which streams change, by how many kilometres and hectares, and whether the choice holds when the
    groups are split other ways. The result is read against what the literature led us to expect. Where the evidence cannot decide, the method says so, and that shows
    where the next sampling belongs.
@@ -74,14 +74,14 @@ flowchart LR
 ## Biology, fish surveys and stream flow: three lines of evidence
 
 The test does not rest on any one dataset. Priors come first: each species' life history and biology,
-and the published thresholds. Fish surveys test those priors, and flow is what the rules read. Where
-they agree a rule stands on all three, and where they part is the place to look next.
+and the published thresholds. Fish surveys test those priors, and flow is what the habitat definitions read. Where
+they agree a habitat definition stands on all three, and where they part is the place to look next.
 
 ## Predicting flow on almost every stream in the BC Freshwater Atlas
 
-Fish live by water, so the rules read flow. [wet](https://www.newgraphenvironment.com/wet/) estimates
+Fish live by water, so the habitat definitions read flow. [wet](https://www.newgraphenvironment.com/wet/) estimates
 how much water flows in almost every stream in British Columbia, month by month, tied to the
-Freshwater Atlas stream by stream, and publishes it openly so anyone can read it [@wet]. That lets a rule set
+Freshwater Atlas stream by stream, and publishes it openly so anyone can read it [@wet]. That lets a habitat definition set
 a real flow floor rather than a proxy for one, ask how far a stream sits from a river of a given size,
 and read flow in the weeks a life stage needs it.
 
@@ -90,19 +90,19 @@ and read flow in the weeks a life stage needs it.
 ## Joining fish habitat to floodplain mapping
 
 Habitat is modelled on the stream line, and people plan on the ground. So we do not cut a floodplain
-to fit each rule. We draw one floodplain from the whole stream network of the Freshwater Atlas [@flnrord2021FreshwaterAtlasb], using valley confinement [@nagel_etal2014LandscapeScale; @hall_etal2007Predictingriver], and key every cell to the
+to fit each habitat definition. We draw one floodplain from the whole stream network of the Freshwater Atlas [@flnrord2021FreshwaterAtlasb], using valley confinement [@nagel_etal2014LandscapeScale; @hall_etal2007Predictingriver], and key every cell to the
 stream it belongs to, and habitat joins to it: each cell takes the nearest segment on its
 own stream.
 
-That changes what a new question costs. A new rule, another species, a partner's own rule set or a
-recovery team's definition is a new join on the same ground. Two rules compare hectare for hectare,
+That changes what a new question costs. A new habitat definition, another species, or one from a partner or a
+recovery team is a new join on the same ground. Two habitat definitions compare hectare for hectare,
 in floodplain hectares and in hectares weighted by how likely fish are to use them, as well as in
 kilometres.
 
 ::: {.column-page layout-ncol=2}
-![Chinook rearing on the Bulkley River, Telkwa to Houston, joined to the floodplain under the existing rule. Orange is what this rule holds and the tuned rule does not.](fig/habitat-rules_chinook-existing.jpg){fig-alt="Map of the Bulkley River floodplain showing chinook rearing habitat under the existing rule, with the part only that rule holds in orange"}
+![Chinook rearing on the Bulkley River, Telkwa to Houston, joined to the floodplain under the existing habitat definition. Orange is what it holds and the tuned one does not.](fig/habitat-rules_chinook-existing.jpg){fig-alt="Map of the Bulkley River floodplain showing chinook rearing habitat under the existing habitat definition, with the part only it holds in orange"}
 
-![The same reach of the Bulkley under the tuned rule. Green is what this rule adds.](fig/habitat-rules_chinook-tuned.jpg){fig-alt="Map of the same floodplain showing chinook rearing habitat under the tuned rule, with the part only that rule holds in green"}
+![The same reach of the Bulkley under the tuned habitat definition. Green is what it adds.](fig/habitat-rules_chinook-tuned.jpg){fig-alt="Map of the same floodplain showing chinook rearing habitat under the tuned habitat definition, with the part only it holds in green"}
 :::
 
 ![The same reach of the Bulkley, shaded by how likely chinook are to use the stream beside it. Floodplain beside streams with no grade is left unshaded.](fig/habitat-rules_chinook-grade.jpg){fig-alt="Map of the floodplain along graded streams in the same reach, shaded from low to high expected use, darkest along the Bulkley River mainstem"}
@@ -155,26 +155,26 @@ steady, change one variable, score it on held-out data and show the before and a
 The same steps apply to each species tested, and two of them show what the method does when the evidence can
 carry a change and when it cannot.
 
-**Where the evidence can carry a change, it names a new rule.** For chinook rearing the fish records support a
-different rule from the current one. The
+**Where the evidence can carry a change, it names a new habitat definition.** For chinook rearing the fish records support a
+different habitat definition from the current one. The
 [chinook rearing article](https://www.newgraphenvironment.com/knowledge/articles/chinook_rearing.html)
-walks through it: the candidate rules, the choice, and whole runs compared stream by stream.
+walks through it: the candidate habitat definitions, the choice, and whole runs compared stream by stream.
 
 **Where the evidence is thin, the method says so.** The Pacific populations of westslope cutthroat
-are listed under the Species at Risk Act, so a rule for them has to stand on its evidence. The chain
-records where the evidence leans and says how weak that lean is, and the rule applied stays as it is
+are listed under the Species at Risk Act, so a fish habitat definition for them has to stand on its evidence. The chain
+records where the evidence leans and says how weak that lean is, and the habitat definition applied stays as it is
 until the evidence can carry a change. The next step strengthens it: resident populations above falls
 and steep reaches define much of this species' range, so they come in where an independent fish
 record shows a population, and a survey never counts only because it caught fish.
 
 **How streams are cut into segments is the next thing to test.** Tuning on a network with fewer cuts means
 the place a fish was caught stops shaping the gradient that scores it, and it shows how much the cuts
-move a rule. That starts with chinook rearing.
+move a habitat definition. That starts with chinook rearing.
 
 ::: {.column-page layout-ncol=2}
-![Westslope cutthroat rearing on the Elk River, Sparwood to Elkford, under the existing rule. Orange is what this rule holds and the tuned rule does not. The floodplain is drawn for this map with the published method.](fig/habitat-rules_wct-existing.jpg){fig-alt="Map of the Elk River floodplain and streams from Sparwood to Elkford showing westslope cutthroat rearing habitat under the existing rule, with the part only that rule holds in orange"}
+![Westslope cutthroat rearing on the Elk River, Sparwood to Elkford, under the existing habitat definition. Orange is what it holds and the tuned one does not. The floodplain is drawn for this map with the published method.](fig/habitat-rules_wct-existing.jpg){fig-alt="Map of the Elk River floodplain and streams from Sparwood to Elkford showing westslope cutthroat rearing habitat under the existing habitat definition, with the part only it holds in orange"}
 
-![The same reach of the Elk under the tuned rule, here the underpowered lean, shown to read the reasoning. Green is what it adds. The rule applied has not changed.](fig/habitat-rules_wct-tuned.jpg){fig-alt="Map of the same valley showing westslope cutthroat rearing habitat under the tuned rule, with the part only that rule holds in green"}
+![The same reach of the Elk under the tuned habitat definition, here the underpowered lean, shown to read the reasoning. Green is what it adds. The habitat definition applied has not changed.](fig/habitat-rules_wct-tuned.jpg){fig-alt="Map of the same valley showing westslope cutthroat rearing habitat under the tuned habitat definition, with the part only it holds in green"}
 :::
 
 The tests go beyond a single stream-size cut-off. They cover gradient, channel width, discharge, and the distance from a
@@ -185,10 +185,10 @@ is how a stream's position in its network shapes its use.
 
 - **Species at risk recovery:** habitat definitions with stated confidence, to support critical
   habitat identification and recovery actions.
-- **Watershed security:** rules tied to stream flow and to the connections between small streams and
+- **Watershed security:** habitat definitions tied to stream flow and to the connections between small streams and
   large rivers show which habitat depends on which flows.
 - **Conservation and restoration planning:** habitat kilometres and floodplain hectares from tested
-  rules, beside the largest forests and the condition of the ground.
+  habitat definitions, beside the largest forests and the condition of the ground.
 - **Habitat offset accounting:** gains and losses measured with the same tools, before and after,
   with every input versioned, so the accounting can be audited.
 - **Monitoring:** new surveys, new flows or a new network rerun the same chain and show what changed
@@ -200,10 +200,10 @@ All of it is open code, and each run keeps a record of what it did.
 
 | | |
 |:--|:----|
-| ![](fig/hex/fresh.png){height=110px fig-alt="fresh hex sticker"} | **[fresh](https://www.newgraphenvironment.com/fresh/)**. The stream network engine [@fresh] on the BC Freshwater Atlas, through fwapg. It places surveys on streams, walks the network and applies habitat rules. |
-| ![](fig/hex/link.png){height=110px fig-alt="link hex sticker"} | **[link](https://www.newgraphenvironment.com/link/)**. Habitat and access for each species across the province, from configurable rules [@link], reproducing the approach of bcfishpass [@norris2024smnorrisbcfishpass]. |
+| ![](fig/hex/fresh.png){height=110px fig-alt="fresh hex sticker"} | **[fresh](https://www.newgraphenvironment.com/fresh/)**. The stream network engine [@fresh] on the BC Freshwater Atlas, through fwapg. It places surveys on streams, walks the network and applies fish habitat definitions. |
+| ![](fig/hex/link.png){height=110px fig-alt="link hex sticker"} | **[link](https://www.newgraphenvironment.com/link/)**. Habitat and access for each species across the province, from configurable habitat definitions [@link], reproducing the approach of bcfishpass [@norris2024smnorrisbcfishpass]. |
 | ![](fig/hex/wet.png){height=110px fig-alt="wet hex sticker"} | **[wet](https://www.newgraphenvironment.com/wet/)**. Modelled stream flow, and water temperature at stations [@wet]. |
-| ![](fig/hex/knowledge.png){height=110px fig-alt="knowledge hex sticker"} | **[knowledge](https://www.newgraphenvironment.com/knowledge/)**. The evidence and the testing [@knowledge]. It holds the cited literature and life histories, assembles the fish records, tunes and compares rules, and publishes the results with their provenance. Its [methodology article](https://www.newgraphenvironment.com/knowledge/articles/habitat_thresholds.html) is the reference for how a rule is tested. |
+| ![](fig/hex/knowledge.png){height=110px fig-alt="knowledge hex sticker"} | **[knowledge](https://www.newgraphenvironment.com/knowledge/)**. The evidence and the testing [@knowledge]. It holds the cited literature and life histories, assembles the fish records, tunes and compares habitat definitions, and publishes the results with their provenance. Its [methodology article](https://www.newgraphenvironment.com/knowledge/articles/habitat_thresholds.html) is the reference for how a habitat definition is tested. |
 | ![](fig/hex/flooded.png){height=110px fig-alt="flooded hex sticker"} | **[flooded](https://www.newgraphenvironment.com/flooded/)**. Draws the floodplain from terrain and joins habitat to it by position [@flooded]. |
 | ![](fig/hex/drift.png){height=110px fig-alt="drift hex sticker"} | **[drift](https://www.newgraphenvironment.com/drift/)**. What changed on the floodplain and when, from land cover [@drift]. |
 | ![](fig/hex/cd.png){height=110px fig-alt="cd hex sticker"} | **[cd](https://www.newgraphenvironment.com/cd/)**. How far the climate has moved, over any area. |
@@ -230,7 +230,7 @@ The raw lidar points, for canopy height, elevation models and comparing flights,
 ::: {}
 **[stac-floodplains-bc](https://www.newgraphenvironment.com/stac_floodplains_bc/)**
 
-Mapped floodplains, and how the land in them changed: the floodplain rules join to.
+Mapped floodplains, and how the land in them changed: the floodplain fish habitat definitions join to.
 :::
 
 ::: {}
@@ -258,11 +258,11 @@ This work is in progress and built in the open, and we want to shape where it go
 affects.
 
 Working with First Nations means their priorities shape the work and their knowledge stays theirs.
-Provincial and federal managers can check a rule, rerun it and tell us what recovery and offset work
+Provincial and federal managers can check a habitat definition, rerun it and tell us what recovery and offset work
 need from it. Restoration and stewardship groups know their streams, and their surveys and their read of
-a rule are what sharpen it.
+a habitat definition are what sharpen it.
 
-The tools keep moving as the evidence and the questions do. Choosing which rule, which flows and which
+The tools keep moving as the evidence and the questions do. Choosing which habitat definition, which flows and which
 floodplain fit a question on a real river is where the work is, and that is the part we would like to do
 with you.
 
