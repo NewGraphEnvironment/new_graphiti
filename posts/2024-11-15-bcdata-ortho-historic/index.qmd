@@ -175,7 +175,7 @@ lburn_sf(
 ```
 
 ## Download Spatial Data Layers From BC DAta Catalogue
-Next we grab a few key layers from the BC Data Catalogue API using convenience function from our [`rfp`](https://github.com/NewGraphEnvironment/rfp) package ("Reproducable Field Products") which wrap the provincially maintained [`bcdata`](https://github.com/bcgov/bcdata) package.  We grab:
+Next we grab a few key layers from the BC Data Catalogue API using convenience function from our `rfp` package ("Reproducable Field Products") which wrap the provincially maintained [`bcdata`](https://github.com/bcgov/bcdata) package.  We grab:
 
   - [Railways](https://catalogue.data.gov.bc.ca/dataset/railway-track-line)
   - [Streams](https://catalogue.data.gov.bc.ca/dataset/freshwater-atlas-stream-network) in the Bulkley Watershed group that are 4th order or greater.
